@@ -1,5 +1,5 @@
-/* Toggle B */
+/* Toggles */
 input:checked ~ .dot {
   transform: translateX(100%);
-  background-color: #169F9D;
+  background-color: #0D9488;
 }
