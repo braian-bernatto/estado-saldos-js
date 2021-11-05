@@ -10,6 +10,7 @@ apiRouter.get('/', (req, res) => res.json('Your backend API is running successfu
 apiRouter.get('/licitaciones', licitacionController.apiGetLicitaciones)
 apiRouter.get('/licitaciones/:id', licitacionController.apiGetLicitacionByID)
 apiRouter.get('/licitaciones/activo/:estado', licitacionController.apiGetLicitacionesByEstado)
+apiRouter.get('/licitaciones/search/:input', licitacionController.apiGetLicitacionesBySearch)
 
 
 module.exports = apiRouter
