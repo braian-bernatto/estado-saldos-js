@@ -1,5 +1,6 @@
 const apiRouter = require('express').Router()
 const licitacionController = require('./controllers/licitacionController')
+const contratoController = require('./controllers/contratoController')
 const cors = require('cors')
 
 apiRouter.use(cors())
@@ -11,6 +12,9 @@ apiRouter.get('/licitaciones', licitacionController.apiGetLicitaciones)
 apiRouter.get('/licitaciones/:id', licitacionController.apiGetLicitacionByID)
 apiRouter.get('/licitaciones/activo/:estado', licitacionController.apiGetLicitacionesByEstado)
 apiRouter.get('/licitaciones/search/:input', licitacionController.apiGetLicitacionesBySearch)
+
+// contratos routes
+apiRouter.get('/licitaciones/:id/contratos', contratoController.apiGetContratos)
 
 
 module.exports = apiRouter
