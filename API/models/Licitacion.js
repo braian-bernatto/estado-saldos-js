@@ -86,7 +86,7 @@ Licitacion.licitacionesByEstado = async function (estado) {
   })
 }
 
-Licitacion.licitacionesSearch = async function (search) {
+Licitacion.licitacionesSearch = async function (input) {
   let licitacionObj = []
   let x = 0
   return new Promise ( async (resolve, reject) => {
@@ -105,7 +105,7 @@ Licitacion.licitacionesSearch = async function (search) {
         licitacion_id::text || ' ' ||
         empresa_ruc || ' ' || 
         empresa_nombre_fantasia
-        ilike '%${search}%'
+        ilike '%${input}%'
         order by licitacion_id)`) 
          
         resultado.forEach(async licitacion => {          

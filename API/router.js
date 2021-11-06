@@ -15,6 +15,9 @@ apiRouter.get('/licitaciones/search/:input', licitacionController.apiGetLicitaci
 
 // contratos routes
 apiRouter.get('/licitaciones/:id/contratos', contratoController.apiGetContratos)
+apiRouter.get('/licitaciones/:id/contratos/:nro', contratoController.apiGetContrato)
+apiRouter.get('/licitaciones/:id/contratos/activo/:estado', contratoController.apiGetContratoByEstado)
+apiRouter.get('/licitaciones/:id/contratos/search/:input', contratoController.apiGetContratosBySearch)
 
 
 module.exports = apiRouter
