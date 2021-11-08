@@ -151,4 +151,90 @@ Contrato.contratosBySearch = async function (licitacionID, input) {
   })
 }
 
+Contrato.contratoResumen = async function (licitacionID, contratoNro) {
+  return new Promise(async (resolve, reject)=>{
+    try {
+      // adjudicacion normal
+      let resultado = await pool.query(`select * from contrato natural join contrato_detalle natural join codigo_contratacion natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+
+      // adjudicacion por lote
+      if (!resultado.length) {
+        resultado = await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato natural join adenda_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      }
+
+      // monto total emitido en ordenes
+      let totalOrdenes = await pool.query(`select sum(orden_monto) as orden_emitido from orden natural join orden_tipo natural join contrato
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+      
+      totalOrdenes.length? '' : totalOrdenes = 0
+
+      // monto total facturado
+      let totalFacturado = await pool.query(`select sum(factura_monto) as total_factura from factura natural join licitacion natural join contrato
+      where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro};`)
+
+      totalFacturado.length? '' : totalFacturado = 0
+      
+      // monto facturado con str
+      let totalFacturadoSTR = await pool.query(`select sum(factura_monto) as total_factura_str from str_detalle natural join str natural join factura natural join licitacion where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+      
+      totalFacturadoSTR.length? '' : totalFacturadoSTR = 0
+      
+      // detalle de adenda
+      let adenda = await this.verAdenda(licitacionID, contratoNro)
+
+      if (resultado.length && totalOrdenes.length && totalFacturado.length) {
+        let contrato = new Contrato(resultado, adenda)
+        contrato.montos = totalOrdenes
+        contrato.montos.push(totalFacturado[0])
+        contrato.montos.push(totalFacturadoSTR[0])
+        resolve(contrato)
+      }else{
+        reject()
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
+Contrato.verAdenda = async function (licitacionID, contratoNro) {
+ return new Promise(async (resolve, reject)=>{
+  try {
+    // monto total de la adenda
+    let ampliacion = await pool.query(`select * from codigo_contratacion natural join adenda_cc natural join contrato natural join codigo_rubro
+    where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+    
+    // adenda con lotes
+    let lotes = await pool.query(`select * from adenda_lote natural join adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+
+    lotes.length? '' : (lotes = false, ampliacion = false)
+
+    // adenda disminucion
+    let disminucion = await pool.query(`select * from adenda_lote natural join adenda_disminucion natural join adenda natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+    
+    if (!disminucion.length) {
+     disminucion = await pool.query(`select * from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`)
+    }
+
+    disminucion.length? '' : disminucion = false
+
+    // si no hay ningun tipo de adenda se envia un false
+    if (ampliacion.length || lotes.length || disminucion.length) {
+      let adenda = [
+        {ampliacion},
+        {lotes},
+        {disminucion}
+      ]
+      resolve(adenda) 
+    }else{
+      resolve(false)
+    }
+  } catch (error) {
+    console.log(error)
+  }
+ }) 
+}
+
+
 module.exports = Contrato
