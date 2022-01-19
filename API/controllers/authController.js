@@ -23,3 +23,7 @@ exports.autenticarUsuario = async (req, res) => {
     console.log(error)
   }
 }
+
+exports.usuarioAutenticado = async (req, res) => {
+  res.send(req.usuario)
+}

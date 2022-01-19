@@ -8,7 +8,11 @@ const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
 
-apiRouter.use(cors())
+// habilitando cors
+const opcionesCors = {
+  origin: process.env.FRONTEND_URL
+}
+apiRouter.use(cors(opcionesCors))
 
 apiRouter.get('/', (req, res) =>
   res.json('Your backend API is running successfully!!!')
@@ -23,14 +27,15 @@ apiRouter.post(
   ],
   authController.autenticarUsuario
 )
+apiRouter.get('/auth', auth, authController.usuarioAutenticado)
 
 // llamados routes
 apiRouter.get('/licitaciones', auth, licitacionController.apiGetLicitaciones)
 apiRouter.get(
-  '/licitaciones/:id',
-  auth,
-  licitacionController.apiGetLicitacionByID
+  '/licitaciones/enlaces',
+  licitacionController.apiGetLicitacionesEnlaces
 )
+apiRouter.get('/licitaciones/:id', licitacionController.apiGetLicitacionByID)
 apiRouter.get(
   '/licitaciones/activo/:estado',
   auth,
@@ -49,8 +54,11 @@ apiRouter.get(
   contratoController.apiGetContratos
 )
 apiRouter.get(
+  '/licitaciones/contratos/enlaces',
+  contratoController.apiGetContratosEnlaces
+)
+apiRouter.get(
   '/licitaciones/:id/contratos/:nro',
-  auth,
   contratoController.apiGetContrato
 )
 apiRouter.get(
@@ -74,6 +82,10 @@ apiRouter.get(
   '/licitaciones/:id/contratos/:nro/ordenes',
   auth,
   ordenController.apiGetOrdenes
+)
+apiRouter.get(
+  '/licitaciones/ordenes/enlaces',
+  ordenController.apiGetOrdenesEnlaces
 )
 
 // facturas routes

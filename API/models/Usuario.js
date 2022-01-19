@@ -1,5 +1,5 @@
 const pool = require('../db')
-const bcryptjs = require('bcryptjs')
+const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 let Usuario = function (data) {
@@ -20,39 +20,24 @@ Usuario.verificarUsuario = async function (email, password) {
         // retorno null para que no se siga ejecutando los codigos siguientes
         return null
       } else {
-        // revisamos el password
-        const passCorrecto = await bcryptjs.compare(
-          password,
-          usuario[0].usuario_password
-        )
-
-        if (!passCorrecto) {
+        // verificar  el password y autenticar al usuario
+        if (bcrypt.compareSync(password, usuario[0].usuario_password)) {
+          // crear JWT
+          const token = jwt.sign(
+            {
+              nombre: usuario[0].usuario_nombre,
+              email: usuario[0].usuario_email
+            },
+            process.env.SECRETA,
+            {
+              expiresIn: '24h'
+            }
+          )
+          resolve({ token })
+        } else {
           resolve({ msg: 'Password Incorrecto' })
           return null
         }
-
-        // si todo es correcto crear y firmar el jwt
-        const payload = {
-          usuario: {
-            email: usuario[0].usuario_email
-          }
-        }
-        // firmar el jwt
-        jwt.sign(
-          payload,
-          process.env.SECRETA,
-          {
-            expiresIn: '24h'
-          },
-          (error, token) => {
-            if (error) {
-              reject()
-              throw error
-            }
-            // mensaje de confirmacion
-            resolve({ token })
-          }
-        )
       }
     } catch (error) {
       console.log(error)
