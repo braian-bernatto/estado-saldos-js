@@ -9,7 +9,7 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
     try {
       // orden con lote
       let resultado = await pool.query(
-        `select orden_year, orden_nro, orden_monto, lote_descri, orden_tipo_descri from orden natural join orden_lote natural join orden_tipo natural join moneda natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} order by orden_year`
+        `select orden_year, orden_nro, orden_monto, lote_descri, orden_tipo_descri from orden_lote natural join orden_tipo natural join moneda natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} order by orden_year`
       )
 
       // orden sin lote
