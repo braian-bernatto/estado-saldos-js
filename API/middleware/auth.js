@@ -15,7 +15,7 @@ module.exports = (req, res, next) => {
       return next()
     } catch (error) {
       console.log('Token no valido')
-      console.log(error)
+      res.status(400).json({ msg: 'Token no valido' })
     }
   } else {
     res.status(400).json({ msg: 'No hay header' })
