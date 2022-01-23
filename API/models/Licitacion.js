@@ -11,11 +11,11 @@ Licitacion.allLicitaciones = async function () {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        'select * from licitacion natural join licitacion_tipo order by licitacion_id'
+        'select * from licitacion natural join licitacion_tipo order by licitacion_id desc'
       )
       resultado.forEach(async licitacion => {
         let adenda = await pool.query(
-          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id`
+          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
 
         adenda.length ? (adenda = true) : (adenda = false)
@@ -85,12 +85,12 @@ Licitacion.licitacionesByEstado = async function (estado) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from licitacion natural join licitacion_tipo where licitacion_activo = ${estado} order by licitacion_id`
+        `select * from licitacion natural join licitacion_tipo where licitacion_activo = ${estado} order by licitacion_id desc`
       )
 
       resultado.forEach(async licitacion => {
         let adenda = await pool.query(
-          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id`
+          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
 
         adenda.length ? (adenda = true) : (adenda = false)
@@ -133,11 +133,11 @@ Licitacion.licitacionesSearch = async function (input) {
         empresa_ruc || ' ' || 
         empresa_nombre_fantasia
         ilike '%${input}%'
-        order by licitacion_id)`)
+        order by licitacion_id desc)`)
 
       resultado.forEach(async licitacion => {
         let adenda = await pool.query(
-          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id`
+          `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
 
         adenda.length ? (adenda = true) : (adenda = false)

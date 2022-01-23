@@ -53,7 +53,12 @@ exports.apiGetLicitacionesBySearch = async function (req, res) {
 }
 
 function ordenarResultado(datos) {
-  return datos.sort(function (a, b) {
-    return a.data.licitacion_id - b.data.licitacion_id
-  })
+  return datos
+    .sort(function (a, b) {
+      return (
+        a.data.licitacion_year - b.data.licitacion_year ||
+        a.data.licitacion_id - b.data.licitacion_id
+      )
+    })
+    .reverse()
 }
