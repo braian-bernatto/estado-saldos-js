@@ -205,9 +205,9 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
 
       // monto facturado con str
       let totalFacturadoSTR = await pool.query(
-        `select sum(factura_monto) as total_factura_str from (select distinct (factura_nro), 
-        factura_monto from str_detalle natural join factura natural join 
-        contrato  where licitacion_id =  ${licitacionID} and contrato_nro =  ${contratoNro}) as listado`
+        `select sum(str_monto * factura_monto / suma_str) as total_factura_str from
+        (select factura_nro, factura_monto, str_monto, suma_str from str_detalle natural join 
+        factura natural join contrato natural join (select factura_nro, factura_monto, sum(str_monto) as suma_str from str_detalle natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro} group by factura_nro, factura_monto) as suma where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as datos`
       )
 
       totalFacturadoSTR.length ? '' : (totalFacturadoSTR = 0)
