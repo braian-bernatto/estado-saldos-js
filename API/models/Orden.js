@@ -39,9 +39,11 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
 
         // ordenar por numero de orden
         const resutlatoOrdenado = resultadoAgrupado.map(listado =>
-          listado.sort((a, b) =>
-            a.orden_nro.localeCompare(b.orden_nro, 'en', { numeric: true })
-          )
+          listado
+            .sort((a, b) =>
+              a.orden_nro.localeCompare(b.orden_nro, 'en', { numeric: true })
+            )
+            .reverse()
         )
 
         resolve(resutlatoOrdenado)
