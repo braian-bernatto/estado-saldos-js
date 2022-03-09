@@ -197,17 +197,25 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
       totalOrdenes.length ? '' : (totalOrdenes = 0)
 
       // monto total facturado
-      let totalFacturado =
-        await pool.query(`select sum(factura_monto) as total_factura from factura natural join licitacion natural join contrato
-      where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro};`)
+      let totalFacturado = await pool.query(
+        `select sum(factura_monto) - (select coalesce(total_nota_credito, 0) as total_nota_credito from (select sum(nota_monto) as total_nota_credito from nota_credito natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as total_nota_credito) as total_factura from factura natural join licitacion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}`
+      )
 
       totalFacturado.length ? '' : (totalFacturado = 0)
 
       // monto facturado con str
       let totalFacturadoSTR = await pool.query(
-        `select sum(str_monto * factura_monto / suma_str) as total_factura_str from
-        (select factura_nro, factura_monto, str_monto, suma_str from str_detalle natural join 
-        factura natural join contrato natural join (select factura_nro, factura_monto, sum(str_monto) as suma_str from str_detalle natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro} group by factura_nro, factura_monto) as suma where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as datos`
+        `select sum(str_monto * factura_menos_credito / suma_str) as total_factura_str from (
+          select factura_nro, factura_monto, str_monto, suma_str, factura_monto - coalesce(total_nota_credito, 0) as factura_menos_credito from (
+          select factura_nro, total_nota_credito from factura left join (select factura_nro, sum(nota_monto) as total_nota_credito from nota_credito natural join factura natural join contrato
+          where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro} group by factura_nro) as credito using(factura_nro) natural join contrato where
+          licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as credito natural join (select factura_nro, factura_monto, str_monto, suma_str from str_detalle natural join
+          factura natural join contrato natural join (select factura_nro, factura_monto, sum(str_monto)
+          as suma_str from str_detalle natural join factura natural join
+          contrato where licitacion_id = ${licitacionID} and contrato_nro =
+          ${contratoNro} group by factura_nro, factura_monto) as suma where
+          licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as listado) as superquery
+          `
       )
 
       totalFacturadoSTR.length ? '' : (totalFacturadoSTR = 0)
