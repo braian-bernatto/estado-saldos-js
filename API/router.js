@@ -76,6 +76,11 @@ apiRouter.get(
   auth,
   contratoController.apiGetContratoResumen
 )
+apiRouter.put(
+  '/licitaciones/:id/contratos/:nro/finalizar/:estado',
+  auth,
+  contratoController.apiFinalizarContrato
+)
 
 // ordenes routes
 apiRouter.get(

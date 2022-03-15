@@ -280,4 +280,21 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
   })
 }
 
+Contrato.finalizarContrato = async function (
+  licitacionID,
+  contratoNro,
+  estado
+) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await pool.query(
+        `update contrato set contrato_activo = ${estado} where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+      )
+      resolve({ msg: 'Actualizado con éxito' })
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
 module.exports = Contrato

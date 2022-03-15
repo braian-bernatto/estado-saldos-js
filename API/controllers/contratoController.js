@@ -61,6 +61,19 @@ exports.apiGetContratoResumen = async function (req, res) {
   }
 }
 
+exports.apiFinalizarContrato = async function (req, res) {
+  try {
+    let respuesta = await Contrato.finalizarContrato(
+      req.params.id,
+      req.params.nro,
+      req.params.estado
+    )
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
 function ordenarResultado(datos) {
   return datos.sort(function (a, b) {
     return a.data.contrato_nro - b.data.contrato_nro
