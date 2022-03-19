@@ -4,6 +4,7 @@ const licitacionController = require('./controllers/licitacionController')
 const contratoController = require('./controllers/contratoController')
 const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
+const empresaController = require('./controllers/empresaController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -99,5 +100,8 @@ apiRouter.get(
   auth,
   facturaController.apiGetFacturas
 )
+
+// empresa routes
+apiRouter.get('/empresa', auth, empresaController.apiGetEmpresas)
 
 module.exports = apiRouter
