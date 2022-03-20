@@ -6,7 +6,7 @@ const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
 const empresaController = require('./controllers/empresaController')
 const nivelController = require('./controllers/nivelController')
-const modalidadController = require('./controllers/modalidadController')
+const tipoLicitacionController = require('./controllers/tipoLicitacionController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -109,7 +109,11 @@ apiRouter.get('/empresa', auth, empresaController.apiGetEmpresas)
 // nivel routes
 apiRouter.get('/nivel', auth, nivelController.apiGetNiveles)
 
-// modalidad routes
-apiRouter.get('/modalidad', auth, modalidadController.apiGetModalidades)
+// tipo-licitacion routes
+apiRouter.get(
+  '/tipo-licitacion',
+  auth,
+  tipoLicitacionController.apiGetTipoLicitaciones
+)
 
 module.exports = apiRouter

@@ -1,14 +1,14 @@
 const pool = require('../db')
 
-const Modalidad = function (data) {
+const TipoLicitacion = function (data) {
   this.data = data
 }
 
-Modalidad.allModalidades = async function () {
+TipoLicitacion.allTipoLicitaciones = async function () {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from modalidad order by modalidad_id`
+        `select * from licitacion_tipo order by licitacion_tipo_id`
       )
       resultado.length ? resolve(resultado) : reject()
     } catch (error) {
@@ -17,4 +17,4 @@ Modalidad.allModalidades = async function () {
   })
 }
 
-module.exports = Modalidad
+module.exports = TipoLicitacion
