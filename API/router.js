@@ -5,6 +5,7 @@ const contratoController = require('./controllers/contratoController')
 const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
 const empresaController = require('./controllers/empresaController')
+const nivelController = require('./controllers/nivelController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -103,5 +104,8 @@ apiRouter.get(
 
 // empresa routes
 apiRouter.get('/empresa', auth, empresaController.apiGetEmpresas)
+
+// nivel routes
+apiRouter.get('/nivel', auth, nivelController.apiGetNiveles)
 
 module.exports = apiRouter
