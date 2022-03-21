@@ -1,8 +1,9 @@
 const pool = require('../db')
 
-const Licitacion = function (data, adenda) {
+const Licitacion = function (data, adenda, activo) {
   this.data = data
   this.adenda = adenda
+  this.activo = activo
 }
 
 Licitacion.allLicitaciones = async function () {
@@ -14,13 +15,20 @@ Licitacion.allLicitaciones = async function () {
         'select * from licitacion natural join licitacion_tipo order by licitacion_id desc'
       )
       resultado.forEach(async licitacion => {
+        //ver si tiene adenda
         let adenda = await pool.query(
           `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
-
         adenda.length ? (adenda = true) : (adenda = false)
 
-        let item = new Licitacion(licitacion, adenda)
+        //ver si tiene contratos activos
+        let activo = await pool.query(
+          `select count(contrato_activo) from contrato where contrato_activo = true and licitacion_id = ${licitacion.licitacion_id}`
+        )
+
+        parseInt(activo[0].count) > 0 ? (activo = true) : (activo = false)
+
+        let item = new Licitacion(licitacion, adenda, activo)
 
         licitacionObj.push(item)
         x++
@@ -63,12 +71,20 @@ Licitacion.licitacionByID = async function (id) {
       let resultado = await pool.query(
         `select * from licitacion natural join licitacion_tipo where licitacion_id = ${id}`
       )
+      //ver si tiene adenda
       let adenda = await pool.query(
         `select adenda_nro from licitacion natural join contrato natural join codigo_contratacion natural join adenda where licitacion_id = ${id}`
       )
       adenda.length ? (adenda = true) : (adenda = false)
+
+      //ver si tiene contratos activos
+      let activo = await pool.query(
+        `select count(contrato_activo) from contrato where contrato_activo = true and licitacion_id = ${id}`
+      )
+      parseInt(activo[0].count) > 0 ? (activo = true) : (activo = false)
+
       if (resultado.length) {
-        let licitacion = new Licitacion(resultado, adenda)
+        let licitacion = new Licitacion(resultado, adenda, activo)
         resolve(licitacion)
       } else {
         reject()
@@ -85,17 +101,27 @@ Licitacion.licitacionesByEstado = async function (estado) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from licitacion natural join licitacion_tipo where licitacion_activo = ${estado} order by licitacion_id desc`
+        `select * from licitacion natural join
+        licitacion_tipo where licitacion_id ${
+          estado === 'true' ? '' : 'not'
+        } in (select distinct(licitacion_id) from contrato natural join 
+        licitacion where contrato_activo = true) order by licitacion_id desc`
       )
 
       resultado.forEach(async licitacion => {
+        //ver si tiene adenda
         let adenda = await pool.query(
           `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
-
         adenda.length ? (adenda = true) : (adenda = false)
 
-        let item = new Licitacion(licitacion, adenda)
+        //ver si tiene contratos activos
+        let activo = await pool.query(
+          `select count(contrato_activo) from contrato where contrato_activo = true and licitacion_id = ${licitacion.licitacion_id}`
+        )
+        parseInt(activo[0].count) > 0 ? (activo = true) : (activo = false)
+
+        let item = new Licitacion(licitacion, adenda, activo)
 
         licitacionObj.push(item)
         x++
@@ -136,13 +162,19 @@ Licitacion.licitacionesSearch = async function (input) {
         order by licitacion_id desc)`)
 
       resultado.forEach(async licitacion => {
+        //ver si tiene adenda
         let adenda = await pool.query(
           `select adenda_nro from licitacion natural join contrato natural join adenda where licitacion_id = ${licitacion.licitacion_id} order by licitacion_id desc`
         )
-
         adenda.length ? (adenda = true) : (adenda = false)
 
-        let item = new Licitacion(licitacion, adenda)
+        //ver si tiene contratos activos
+        let activo = await pool.query(
+          `select count(contrato_activo) from contrato where contrato_activo = true and licitacion_id = ${licitacion.licitacion_id}`
+        )
+        parseInt(activo[0].count) > 0 ? (activo = true) : (activo = false)
+
+        let item = new Licitacion(licitacion, adenda, activo)
 
         licitacionObj.push(item)
         x++
