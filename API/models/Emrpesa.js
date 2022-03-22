@@ -7,7 +7,9 @@ const Moneda = function (data) {
 Moneda.allMonedas = async function () {
   return new Promise(async (resolve, reject) => {
     try {
-      let resultado = await pool.query(`select * from moneda order by 1`)
+      let resultado = await pool.query(
+        `select * from moneda order by moneda_descri`
+      )
       resultado.length ? resolve(resultado) : reject()
     } catch (error) {
       console.log(error)
