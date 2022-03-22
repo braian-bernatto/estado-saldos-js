@@ -7,6 +7,7 @@ const facturaController = require('./controllers/facturaController')
 const empresaController = require('./controllers/empresaController')
 const nivelController = require('./controllers/nivelController')
 const tipoLicitacionController = require('./controllers/tipoLicitacionController')
+const tipoContratoController = require('./controllers/tipoContratoController')
 const monedaController = require('./controllers/monedaController')
 const cors = require('cors')
 const { check } = require('express-validator')
@@ -115,6 +116,13 @@ apiRouter.get(
   '/tipo-licitacion',
   auth,
   tipoLicitacionController.apiGetTipoLicitaciones
+)
+
+// tipo-contrato routes
+apiRouter.get(
+  '/tipo-contrato',
+  auth,
+  tipoContratoController.apiGetTipoContratos
 )
 
 // moneda routes
