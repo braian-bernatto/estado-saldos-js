@@ -81,6 +81,11 @@ apiRouter.get(
   auth,
   contratoController.apiGetContratoResumen
 )
+apiRouter.get(
+  '/licitaciones/:id/contratos/:nro/detalleV2',
+
+  contratoController.apiGetContratoResumenV2
+)
 apiRouter.put(
   '/licitaciones/:id/contratos/:nro/finalizar/:estado',
   auth,
