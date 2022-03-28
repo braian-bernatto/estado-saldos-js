@@ -9,6 +9,7 @@ const nivelController = require('./controllers/nivelController')
 const tipoLicitacionController = require('./controllers/tipoLicitacionController')
 const tipoContratoController = require('./controllers/tipoContratoController')
 const monedaController = require('./controllers/monedaController')
+const codigoController = require('./controllers/codigoController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -132,5 +133,13 @@ apiRouter.get(
 
 // moneda routes
 apiRouter.get('/moneda', auth, monedaController.apiGetMonedas)
+
+// codigo contratacion routes
+apiRouter.get('/codigo-contratacion', auth, codigoController.apiGetCodigos)
+apiRouter.get(
+  '/codigo-contratacion/:contrato/:year/:tipoContrato',
+  auth,
+  codigoController.apiGetCodigoById
+)
 
 module.exports = apiRouter
