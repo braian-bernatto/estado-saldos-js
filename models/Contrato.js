@@ -286,20 +286,25 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
 
       // adenda disminucion
       let disminucion = await pool.query(
+        `select * from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+      )
+
+      // adenda disminucion con lotes
+      let lotes_disminucion = await pool.query(
         `select * from adenda_lote natural join adenda_disminucion natural join adenda natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
       )
 
-      if (!disminucion.length) {
-        disminucion = await pool.query(
-          `select * from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
-        )
-      }
-
       disminucion.length ? '' : (disminucion = false)
+      lotes_disminucion.length ? '' : (lotes_disminucion = false)
 
       // si no hay ningun tipo de adenda se envia un false
       if (ampliacion.length || lotes.length || disminucion.length) {
-        let adenda = [{ ampliacion }, { lotes }, { disminucion }]
+        let adenda = [
+          { ampliacion },
+          { lotes },
+          { disminucion },
+          { lotes_disminucion }
+        ]
         resolve(adenda)
       } else {
         resolve(false)
