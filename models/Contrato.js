@@ -272,13 +272,20 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
   return new Promise(async (resolve, reject) => {
     try {
       // monto total de la adenda
+      let vigencia = await pool.query(
+        `select * from adenda natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and adenda_fecha is not null and adenda_nro
+        not in (select adenda_nro from codigo_contratacion natural join adenda natural join adenda_cc natural join contrato natural join codigo_rubro where licitacion_id =  ${licitacionID} and contrato_nro = ${contratoNro}) and adenda_nro not in (select distinct(adenda_nro) from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`
+      )
+      vigencia.length ? '' : (vigencia = false)
+
+      // monto total de la adenda
       let ampliacion = await pool.query(
-        `select * from codigo_contratacion natural join adenda_cc natural join contrato natural join codigo_rubro where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `select * from codigo_contratacion natural join adenda natural join adenda_cc natural join contrato natural join codigo_rubro where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
       )
 
       // adenda con lotes
       let lotes = await pool.query(
-        `select * from adenda_lote natural join adenda_cc natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `select * from adenda_lote natural join adenda natural join adenda_cc natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
       )
 
       ampliacion.length ? '' : (ampliacion = false)
@@ -303,7 +310,8 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
           { ampliacion },
           { lotes },
           { disminucion },
-          { lotes_disminucion }
+          { lotes_disminucion },
+          { vigencia }
         ]
         resolve(adenda)
       } else {
