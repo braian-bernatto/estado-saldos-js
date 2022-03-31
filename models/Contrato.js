@@ -186,7 +186,7 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
       if (!resultado.length) {
         resultado =
           await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
-      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato natural join adenda_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
       }
 
       // monto total emitido en ordenes
@@ -250,7 +250,7 @@ Contrato.contratoResumenV2 = async function (licitacionID, contratoNro) {
       if (!resultado.length) {
         resultado =
           await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
-      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato natural join adenda_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
       }
 
       // detalle de adenda
