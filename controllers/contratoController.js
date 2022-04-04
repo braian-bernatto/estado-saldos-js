@@ -61,18 +61,6 @@ exports.apiGetContratoResumen = async function (req, res) {
   }
 }
 
-exports.apiGetContratoResumenV2 = async function (req, res) {
-  try {
-    let contrato = await Contrato.contratoResumenV2(
-      req.params.id,
-      req.params.nro
-    )
-    res.json(contrato)
-  } catch (error) {
-    res.status(500).send('Error')
-  }
-}
-
 exports.apiFinalizarContrato = async function (req, res) {
   try {
     let respuesta = await Contrato.finalizarContrato(
