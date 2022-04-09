@@ -9,6 +9,7 @@ const nivelController = require('./controllers/nivelController')
 const rubroController = require('./controllers/rubroController')
 const tipoLicitacionController = require('./controllers/tipoLicitacionController')
 const tipoContratoController = require('./controllers/tipoContratoController')
+const tipoOrdenController = require('./controllers/tipoOrdenController')
 const monedaController = require('./controllers/monedaController')
 const codigoController = require('./controllers/codigoController')
 const cors = require('cors')
@@ -129,6 +130,9 @@ apiRouter.get(
   auth,
   tipoContratoController.apiGetTipoContratos
 )
+
+// tipo-ordenes routes
+apiRouter.get('/tipo-orden', auth, tipoOrdenController.apiGetTipoOrdenes)
 
 // moneda routes
 apiRouter.get('/moneda', auth, monedaController.apiGetMonedas)
