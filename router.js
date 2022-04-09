@@ -6,6 +6,7 @@ const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
 const empresaController = require('./controllers/empresaController')
 const nivelController = require('./controllers/nivelController')
+const rubroController = require('./controllers/rubroController')
 const tipoLicitacionController = require('./controllers/tipoLicitacionController')
 const tipoContratoController = require('./controllers/tipoContratoController')
 const monedaController = require('./controllers/monedaController')
@@ -111,6 +112,9 @@ apiRouter.get('/empresa', auth, empresaController.apiGetEmpresas)
 
 // nivel routes
 apiRouter.get('/nivel', auth, nivelController.apiGetNiveles)
+
+// rubro routes
+apiRouter.get('/rubro', auth, rubroController.apiGetRubros)
 
 // tipo-licitacion routes
 apiRouter.get(
