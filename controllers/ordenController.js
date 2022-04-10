@@ -8,6 +8,20 @@ exports.apiGetOrdenes = async function (req, res) {
     res.status(500).send('Error')
   }
 }
+
+exports.apiCheckOrdenNro = async function (req, res) {
+  try {
+    let respuesta = await Orden.checkOrdenUtilizado(
+      req.params.nro,
+      req.params.tipo,
+      req.params.year
+    )
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
 exports.apiGetOrdenesEnlaces = async function (req, res) {
   try {
     let ordenes = await Orden.ordenesEnlaces()

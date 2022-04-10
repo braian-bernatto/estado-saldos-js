@@ -55,6 +55,20 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
     }
   })
 }
+
+Orden.checkOrdenUtilizado = async function (nro, tipo, year) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `select * from orden where orden_nro ilike '%${nro}%' and orden_tipo_id = ${tipo} and orden_year = ${year}`
+      )
+      resultado.length ? resolve(false) : resolve(true)
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
 Orden.ordenesEnlaces = async function () {
   return new Promise(async (resolve, reject) => {
     try {

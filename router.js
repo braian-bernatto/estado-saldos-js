@@ -96,6 +96,7 @@ apiRouter.get(
   auth,
   ordenController.apiGetOrdenes
 )
+apiRouter.get('/orden/:nro/:tipo/:year', auth, ordenController.apiCheckOrdenNro)
 apiRouter.get(
   '/licitaciones/ordenes/enlaces',
   ordenController.apiGetOrdenesEnlaces
