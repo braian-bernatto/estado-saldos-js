@@ -4,6 +4,7 @@ const licitacionController = require('./controllers/licitacionController')
 const contratoController = require('./controllers/contratoController')
 const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
+const notaCreditoController = require('./controllers/notaCreditoController')
 const empresaController = require('./controllers/empresaController')
 const nivelController = require('./controllers/nivelController')
 const rubroController = require('./controllers/rubroController')
@@ -107,6 +108,13 @@ apiRouter.get(
   '/licitaciones/:id/contratos/:nro/facturas',
   auth,
   facturaController.apiGetFacturas
+)
+
+// notas credito routes
+apiRouter.get(
+  '/licitaciones/:id/contratos/:nro/nota-credito',
+  auth,
+  notaCreditoController.apiGetNotasCredito
 )
 
 // empresa routes
