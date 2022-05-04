@@ -191,4 +191,8 @@ Licitacion.licitacionesSearch = async function (input) {
   })
 }
 
+Licitacion.addLicitacion = async function (datos) {
+  console.log(datos)
+}
+
 module.exports = Licitacion

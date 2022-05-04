@@ -38,7 +38,7 @@ apiRouter.post(
 )
 apiRouter.get('/auth', auth, authController.usuarioAutenticado)
 
-// llamados routes
+// licitaciones routes
 apiRouter.get('/licitaciones', auth, licitacionController.apiGetLicitaciones)
 apiRouter.get(
   '/licitaciones/enlaces',
@@ -54,6 +54,33 @@ apiRouter.get(
   '/licitaciones/search/:input',
   auth,
   licitacionController.apiGetLicitacionesBySearch
+)
+apiRouter.post(
+  '/licitaciones',
+  auth,
+  [
+    check('id', 'El ID es obligatorio').not().isEmpty().isNumeric(),
+    check('tipo_id')
+      .not()
+      .isEmpty()
+      .withMessage('El ID es obligatorio')
+      .isNumeric()
+      .withMessage('El ID debe ser numérico'),
+    check('nro')
+      .not()
+      .isEmpty()
+      .withMessage('El nro de llamado es obligatorio')
+      .isNumeric()
+      .withMessage('El nro de llamado debe ser numérico'),
+    check('year', 'El año es obligatorio').not().isEmpty().isNumeric(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .withMessage('La descripción es obligatoria')
+      .isString()
+      .withMessage('La descripción debe ser un string')
+  ],
+  licitacionController.apiAddLicitacion
 )
 
 // contratos routes
