@@ -4,6 +4,7 @@ const Licitacion = function (data, adenda, activo) {
   this.data = data
   this.adenda = adenda
   this.activo = activo
+  this.errors = []
 }
 
 Licitacion.allLicitaciones = async function () {
@@ -191,8 +192,61 @@ Licitacion.licitacionesSearch = async function (input) {
   })
 }
 
-Licitacion.addLicitacion = async function (datos) {
-  console.log(datos)
+Licitacion.prototype.addLicitacion = async function () {
+  const { id, tipo_id, nro, year, descripcion } = this.data
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `INSERT INTO licitacion(
+            licitacion_id, licitacion_tipo_id, licitacion_nro, licitacion_year, licitacion_descri)
+            VALUES (${id}, ${tipo_id}, ${nro}, ${year}, '${descripcion}')`
+        )
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Licitacion.prototype.updateLicitacion = async function () {
+  const { id, tipo_id, nro, year, descripcion } = this.data
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `UPDATE licitacion
+          SET licitacion_tipo_id=${tipo_id}, licitacion_nro=${nro}, licitacion_year=${year}, licitacion_descri='${descripcion}'
+          WHERE licitacion_id=${id}`
+        )
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Licitacion.deleteLicitacion = function (id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await pool.query(`delete from licitacion where licitacion_id = ${id}`)
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
 
 module.exports = Licitacion

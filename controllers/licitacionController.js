@@ -15,7 +15,6 @@ exports.apiGetLicitaciones = async function (req, res) {
 exports.apiGetLicitacionesEnlaces = async function (req, res) {
   try {
     let licitaciones = await Licitacion.allLicitacionesEnlaces()
-
     res.json(licitaciones)
   } catch (error) {
     res.status(500).send('Error')
@@ -59,10 +58,32 @@ exports.apiAddLicitacion = async function (req, res) {
   if (!errores.isEmpty()) {
     return res.status(400).json({ errores: errores.array() })
   }
-
   try {
-    let licitaciones = await Licitacion.addLicitacion(req.body)
+    let licitaciones = await new Licitacion(req.body).addLicitacion()
     res.json(licitaciones)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiUpdateLicitacion = async function (req, res) {
+  // revisar si hay errores
+  const errores = validationResult(req)
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() })
+  }
+  try {
+    let licitaciones = await new Licitacion(req.body).updateLicitacion()
+    res.json(licitaciones)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiDeleteLicitacion = async function (req, res) {
+  try {
+    let respuesta = await Licitacion.deleteLicitacion(req.params.id)
+    res.json(respuesta)
   } catch (error) {
     res.status(500).send('Error')
   }

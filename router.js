@@ -65,22 +65,60 @@ apiRouter.post(
       .isEmpty()
       .withMessage('El ID es obligatorio')
       .isNumeric()
-      .withMessage('El ID debe ser numérico'),
+      .withMessage('El ID debe ser numérico')
+      .toInt(),
     check('nro')
       .not()
       .isEmpty()
       .withMessage('El nro de llamado es obligatorio')
       .isNumeric()
-      .withMessage('El nro de llamado debe ser numérico'),
-    check('year', 'El año es obligatorio').not().isEmpty().isNumeric(),
+      .withMessage('El nro de llamado debe ser numérico')
+      .toInt(),
+    check('year', 'El año es obligatorio').not().isEmpty().isNumeric().toInt(),
     check('descripcion')
       .not()
       .isEmpty()
       .withMessage('La descripción es obligatoria')
       .isString()
       .withMessage('La descripción debe ser un string')
+      .trim()
   ],
   licitacionController.apiAddLicitacion
+)
+apiRouter.put(
+  '/licitaciones/:id',
+  auth,
+  [
+    check('id', 'El ID es obligatorio').not().isEmpty().isNumeric(),
+    check('tipo_id')
+      .not()
+      .isEmpty()
+      .withMessage('El ID es obligatorio')
+      .isNumeric()
+      .withMessage('El ID debe ser numérico')
+      .toInt(),
+    check('nro')
+      .not()
+      .isEmpty()
+      .withMessage('El nro de llamado es obligatorio')
+      .isNumeric()
+      .withMessage('El nro de llamado debe ser numérico')
+      .toInt(),
+    check('year', 'El año es obligatorio').not().isEmpty().isNumeric().toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .withMessage('La descripción es obligatoria')
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .trim()
+  ],
+  licitacionController.apiUpdateLicitacion
+)
+apiRouter.delete(
+  '/licitaciones/:id',
+  auth,
+  licitacionController.apiDeleteLicitacion
 )
 
 // contratos routes
