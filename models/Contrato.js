@@ -3,6 +3,7 @@ const pool = require('../db')
 const Contrato = function (data, adenda) {
   this.data = data
   this.adenda = adenda
+  this.errors = []
 }
 
 Contrato.allContratos = async function (licitacionID) {
@@ -306,6 +307,43 @@ Contrato.finalizarContrato = async function (
       resolve({ msg: 'Actualizado con éxito' })
     } catch (error) {
       console.log(error)
+    }
+  })
+}
+
+Contrato.prototype.addContrato = async function () {
+  const {
+    licitacion_id,
+    activo,
+    cumplimiento,
+    nro,
+    tipo,
+    year,
+    moneda,
+    empresa,
+    fecha_firma,
+    fecha_vencimiento,
+    lotes,
+    monto_minimo,
+    monto_maximo
+  } = this.data
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `INSERT INTO licitacion(
+            licitacion_id, licitacion_tipo_id, licitacion_nro, licitacion_year, licitacion_descri)
+            VALUES (${id}, ${tipo_id}, ${nro}, ${year}, '${descripcion}')`
+        )
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
     }
   })
 }

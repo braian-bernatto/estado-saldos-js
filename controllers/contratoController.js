@@ -1,4 +1,5 @@
 const Contrato = require('../models/Contrato')
+const { validationResult } = require('express-validator')
 
 exports.apiGetContratos = async function (req, res) {
   try {
@@ -69,6 +70,20 @@ exports.apiFinalizarContrato = async function (req, res) {
       req.params.estado
     )
     res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiAddContrato = async function (req, res) {
+  // revisar si hay errores
+  const errores = validationResult(req)
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() })
+  }
+  try {
+    let contrato = await new Contrato(req.body).addContrato()
+    res.json(contrato)
   } catch (error) {
     res.status(500).send('Error')
   }
