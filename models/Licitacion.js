@@ -241,7 +241,10 @@ Licitacion.prototype.updateLicitacion = async function () {
 Licitacion.deleteLicitacion = function (id) {
   return new Promise(async (resolve, reject) => {
     try {
-      await pool.query(`delete from licitacion where licitacion_id = ${id}`)
+      let idEliminado = await pool.query(
+        `delete from licitacion where licitacion_id = ${id} Returning licitacion_id`
+      )
+      console.log(idEliminado)
       resolve()
     } catch (error) {
       reject(error)

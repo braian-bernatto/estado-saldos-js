@@ -239,39 +239,92 @@ apiRouter.post(
   contratoController.apiAddContrato
 )
 apiRouter.put(
-  '/licitaciones/:id/contratos/:nro',
+  '/licitaciones/:id/contratos/:nro/',
   auth,
   [
-    check('id', 'El ID es obligatorio').not().isEmpty().isNumeric(),
-    check('tipo_id')
+    check('licitacion_id', 'El ID es obligatorio').not().isEmpty().isNumeric(),
+    check('tipo')
       .not()
       .isEmpty()
-      .withMessage('El ID es obligatorio')
+      .withMessage('El tipo es obligatorio')
       .isNumeric()
-      .withMessage('El ID debe ser numérico')
+      .withMessage('El tipo debe ser numérico')
       .toInt(),
+    check('empresa')
+      .not()
+      .isEmpty()
+      .withMessage('El empresa es obligatoria')
+      .isNumeric()
+      .withMessage('El empresa debe ser numérica')
+      .toInt(),
+    check('moneda')
+      .not()
+      .isEmpty()
+      .withMessage('La moneda es obligatoria')
+      .isNumeric()
+      .withMessage('La moneda debe ser numérica')
+      .toInt(),
+    check('activo')
+      .not()
+      .isEmpty()
+      .withMessage('El estado del contrato es obligatorio')
+      .isBoolean()
+      .toBoolean(),
+    check('cumplimiento')
+      .not()
+      .isEmpty()
+      .withMessage('El vencimiento es obligatorio')
+      .isBoolean()
+      .toBoolean(),
     check('nro')
       .not()
       .isEmpty()
-      .withMessage('El nro de llamado es obligatorio')
+      .withMessage('El nro de contrato es obligatorio')
       .isNumeric()
-      .withMessage('El nro de llamado debe ser numérico')
+      .withMessage('El nro de contrato debe ser numérico')
       .toInt(),
     check('year', 'El año es obligatorio').not().isEmpty().isNumeric().toInt(),
-    check('descripcion')
-      .not()
-      .isEmpty()
-      .withMessage('La descripción es obligatoria')
+    check('fecha_firma').isDate().withMessage('La fecha de firma es inválida'),
+    check('fecha_vencimiento')
+      .isDate()
+      .withMessage('La fecha de vencimiento es inválida')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('monto_minimo')
+      .isNumeric()
+      .withMessage('El monto minimo de contrato debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('monto_maximo')
+      .isNumeric()
+      .withMessage('El monto maximo de contrato debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.nro')
+      .isNumeric()
+      .withMessage('El monto minimo de contrato debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.nombre')
       .isString()
       .withMessage('La descripción debe ser un string')
-      .trim()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.maximo')
+      .isNumeric()
+      .withMessage('El monto minimo de contrato debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.minimo')
+      .isNumeric()
+      .withMessage('El monto minimo de contrato debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true })
   ],
-  licitacionController.apiUpdateLicitacion
+  contratoController.apiUpdateContrato
 )
 apiRouter.delete(
-  '/licitaciones/:id/contratos/:nro',
+  '/licitaciones/:id/contratos/:nro/:year/:tipo',
   auth,
-  licitacionController.apiDeleteLicitacion
+  contratoController.apiDeleteContrato
 )
 
 // ordenes routes

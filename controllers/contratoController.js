@@ -89,6 +89,33 @@ exports.apiAddContrato = async function (req, res) {
   }
 }
 
+exports.apiUpdateContrato = async function (req, res) {
+  // revisar si hay errores
+  const errores = validationResult(req)
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() })
+  }
+  try {
+    let contrato = await new Contrato(req.body).updateContrato()
+    res.json(contrato)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiDeleteContrato = async function (req, res) {
+  try {
+    let respuesta = await Contrato.deleteContrato(
+      req.params.nro,
+      req.params.year,
+      req.params.tipo
+    )
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
 function ordenarResultado(datos) {
   return datos.sort(function (a, b) {
     return a.data.contrato_nro - b.data.contrato_nro

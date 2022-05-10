@@ -1,4 +1,5 @@
 const pool = require('../db')
+const pgp = require('pg-promise')({ capSQL: true })
 
 const Contrato = function (data, adenda) {
   this.data = data
@@ -18,6 +19,12 @@ Contrato.allContratos = async function (licitacionID) {
 	    not in (select codigo_contratacion_id from adenda
       natural join contrato natural join adenda_cc where
       licitacion_id =  ${licitacionID} ) order by contrato.contrato_nro`)
+
+      if (!resultado.length) {
+        resultado =
+          await pool.query(`select * from licitacion natural join licitacion_tipo
+      natural join contrato natural join empresa where licitacion_id = ${licitacionID} order by contrato.contrato_nro`)
+      }
 
       resultado.forEach(async contrato => {
         let adenda = await pool.query(
@@ -76,6 +83,13 @@ Contrato.contratoByNro = async function (licitacionID, contratoNro) {
       natural join contrato natural join adenda_cc where
       licitacion_id =  ${licitacionID} ) order by contrato.contrato_nro`)
 
+      if (!resultado.length) {
+        resultado =
+          await pool.query(`select * from licitacion natural join licitacion_tipo
+      natural join contrato natural join empresa where licitacion_id = ${licitacionID} and 
+      contrato_nro = ${contratoNro} order by contrato.contrato_nro`)
+      }
+
       let adenda = await pool.query(
         `select adenda_nro from contrato natural join adenda where licitacion_id = ${licitacionID} and contrato_nro = ${resultado[0].contrato_nro}`
       )
@@ -109,6 +123,13 @@ Contrato.contratosByEstado = async function (licitacionID, estado) {
 	    not in (select codigo_contratacion_id from adenda
       natural join contrato natural join adenda_cc where
       licitacion_id =  ${licitacionID} ) order by contrato.contrato_nro`)
+
+      if (!resultado.length) {
+        resultado =
+          await pool.query(`select * from licitacion natural join  licitacion_tipo natural join contrato natural join
+      empresa where licitacion_id = ${licitacionID} and 
+      contrato_activo = ${estado} order by contrato.contrato_nro`)
+      }
 
       resultado.forEach(async contrato => {
         let adenda = await pool.query(
@@ -188,6 +209,20 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
         resultado =
           await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
       where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      }
+
+      // adjudicacion normal
+      if (!resultado.length) {
+        resultado = await pool.query(
+          `select * from contrato natural join contrato_detalle where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        )
+      }
+
+      // adjudicacion por lote
+      if (!resultado.length) {
+        resultado = await pool.query(
+          `select * from contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        )
       }
 
       // monto total emitido en ordenes
@@ -332,10 +367,55 @@ Contrato.prototype.addContrato = async function () {
     if (!this.errors.length) {
       try {
         let resultado = await pool.query(
-          `INSERT INTO licitacion(
-            licitacion_id, licitacion_tipo_id, licitacion_nro, licitacion_year, licitacion_descri)
-            VALUES (${id}, ${tipo_id}, ${nro}, ${year}, '${descripcion}')`
+          `INSERT INTO contrato(
+            contrato_nro, contrato_year, tipo_contrato_id, contrato_firma, contrato_vencimiento, licitacion_id, empresa_id, moneda_id, contrato_activo)    
+            VALUES (${nro}, ${year}, ${tipo}, '${fecha_firma}', '${
+            cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
+          }', ${licitacion_id}, ${empresa}, ${moneda}, ${activo})`
         )
+        if (lotes === false) {
+          await pool.query(
+            `INSERT INTO contrato_detalle(
+              contrato_nro, contrato_year, tipo_contrato_id, contrato_minimo, contrato_maximo)
+              VALUES (${nro}, ${year}, ${tipo}, ${monto_minimo}, ${monto_maximo})`
+          )
+        }
+        if (Array.isArray(lotes)) {
+          const cs = new pgp.helpers.ColumnSet(
+            [
+              'contrato_lote_id',
+              'contrato_nro',
+              'contrato_year',
+              'tipo_contrato_id',
+              'lote_descri',
+              'lote_minimo',
+              'lote_maximo'
+            ],
+            {
+              table: 'contrato_lote'
+            }
+          )
+
+          // data input values:
+          const values = lotes.map(lote => {
+            const formattedLote = {
+              contrato_nro: nro,
+              contrato_year: year,
+              tipo_contrato_id: tipo,
+              contrato_lote_id: lote.nro,
+              lote_descri: lote.nombre,
+              lote_minimo: lote.minimo,
+              lote_maximo: lote.maximo
+            }
+            return formattedLote
+          })
+
+          // generating a multi-row insert query:
+          const query = pgp.helpers.insert(values, cs)
+
+          // executing the query:
+          await pool.none(query)
+        }
         resolve(resultado)
       } catch (error) {
         this.errors.push('Please try again later...')
@@ -344,6 +424,111 @@ Contrato.prototype.addContrato = async function () {
       }
     } else {
       reject(this.errors)
+    }
+  })
+}
+
+Contrato.prototype.updateContrato = async function () {
+  const {
+    licitacion_id,
+    activo,
+    cumplimiento,
+    nro,
+    tipo,
+    year,
+    moneda,
+    empresa,
+    fecha_firma,
+    fecha_vencimiento,
+    lotes,
+    monto_minimo,
+    monto_maximo
+  } = this.data
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `UPDATE contrato
+          SET contrato_firma='${fecha_firma}', contrato_vencimiento='${
+            cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
+          }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
+          WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}    `
+        )
+        if (lotes === false) {
+          await pool.query(
+            `UPDATE contrato_detalle
+            SET contrato_minimo=${monto_minimo}, contrato_maximo=${monto_maximo}
+            WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
+          )
+        }
+        if (Array.isArray(lotes)) {
+          const cs = new pgp.helpers.ColumnSet(
+            ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
+            {
+              table: 'contrato_lote'
+            }
+          )
+
+          // data input values:
+          let formattedLote
+          const values = lotes.map(lote => {
+            formattedLote = {
+              contrato_nro: nro,
+              contrato_year: year,
+              tipo_contrato_id: tipo,
+              contrato_lote_id: lote.nro,
+              lote_descri: lote.nombre,
+              lote_minimo: lote.minimo,
+              lote_maximo: lote.maximo
+            }
+            return formattedLote
+          })
+
+          const condition = pgp.as.format(
+            ' WHERE contrato_nro=${contrato_nro} and contrato_year=${contrato_year} and tipo_contrato_id=${tipo_contrato_id}',
+            formattedLote
+          )
+
+          // generating a multi-row insert query:
+          const query = pgp.helpers.update(values, cs) + condition
+
+          // executing the query:
+          await pool.none(query)
+        }
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Contrato.deleteContrato = function (nro, year, tipo) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let result = await pool.query(
+        `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+      )
+      if (!result.length) {
+        console.log('entro en delete 2')
+        result = await pool.query(
+          `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+        )
+      }
+      if (result.length) {
+        console.log('entro en delete 3')
+        result = await pool.query(
+          `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+        )
+      }
+      resolve()
+    } catch (error) {
+      reject(error)
     }
   })
 }
