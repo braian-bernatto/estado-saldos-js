@@ -362,6 +362,7 @@ Contrato.prototype.addContrato = async function () {
     monto_minimo,
     monto_maximo
   } = this.data
+
   // only if there are no errors proceedo to save into the database
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
@@ -444,6 +445,8 @@ Contrato.prototype.updateContrato = async function () {
     monto_minimo,
     monto_maximo
   } = this.data
+  const eliminadosArray = this.data.eliminados ? this.data.eliminados : []
+
   // only if there are no errors proceedo to save into the database
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
@@ -463,8 +466,24 @@ Contrato.prototype.updateContrato = async function () {
           )
         }
         if (Array.isArray(lotes)) {
-          const cs = new pgp.helpers.ColumnSet(
+          const csUpdate = new pgp.helpers.ColumnSet(
             ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
+            {
+              table: 'contrato_lote'
+            }
+          )
+
+          // si se agregan nuevos lotes al contrato se insertan
+          const csInsert = new pgp.helpers.ColumnSet(
+            [
+              'contrato_lote_id',
+              'contrato_nro',
+              'contrato_year',
+              'tipo_contrato_id',
+              'lote_descri',
+              'lote_minimo',
+              'lote_maximo'
+            ],
             {
               table: 'contrato_lote'
             }
@@ -482,19 +501,42 @@ Contrato.prototype.updateContrato = async function () {
               lote_minimo: lote.minimo,
               lote_maximo: lote.maximo
             }
+            lote.hasOwnProperty('newLote')
+              ? (formattedLote.newLote = true)
+              : formattedLote
             return formattedLote
           })
 
+          const newLotes = values.filter(lote => lote.hasOwnProperty('newLote'))
+          const lotesActualizar = values.filter(
+            lote => !lote.hasOwnProperty('newLote')
+          )
+
           const condition = pgp.as.format(
-            ' WHERE contrato_nro=${contrato_nro} and contrato_year=${contrato_year} and tipo_contrato_id=${tipo_contrato_id}',
+            ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
             formattedLote
           )
 
-          // generating a multi-row insert query:
-          const query = pgp.helpers.update(values, cs) + condition
+          // si se agregaron lotes nuevos se insertan en la bd
+          if (newLotes.length > 0) {
+            console.log('entro en insert')
+            // generating a multi-row insert query:
+            const queryInsert = pgp.helpers.insert(newLotes, csInsert)
+            // executing the query:
+            await pool.none(queryInsert)
+          }
 
+          // generating a multi-row insert query:
+          const queryUpdate =
+            pgp.helpers.update(lotesActualizar, csUpdate) + condition
           // executing the query:
-          await pool.none(query)
+          await pool.none(queryUpdate)
+
+          // if (eliminadosArray.length > 0) {
+          //   await pool.query(
+          //     `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+          //   )
+          // }
         }
         resolve(resultado)
       } catch (error) {
