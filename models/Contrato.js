@@ -446,7 +446,6 @@ Contrato.prototype.updateContrato = async function () {
     monto_maximo
   } = this.data
   const eliminadosArray = this.data.eliminados ? this.data.eliminados : []
-
   // only if there are no errors proceedo to save into the database
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
@@ -519,7 +518,6 @@ Contrato.prototype.updateContrato = async function () {
 
           // si se agregaron lotes nuevos se insertan en la bd
           if (newLotes.length > 0) {
-            console.log('entro en insert')
             // generating a multi-row insert query:
             const queryInsert = pgp.helpers.insert(newLotes, csInsert)
             // executing the query:
@@ -532,11 +530,16 @@ Contrato.prototype.updateContrato = async function () {
           // executing the query:
           await pool.none(queryUpdate)
 
-          // if (eliminadosArray.length > 0) {
-          //   await pool.query(
-          //     `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-          //   )
-          // }
+          //si se eliminan lotes del contrato
+          if (eliminadosArray.length > 0) {
+            const ids = eliminadosArray.map(lote => {
+              return lote.nro
+            })
+            await pool.none(
+              `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} and contrato_lote_id in ($1:list)`,
+              [ids]
+            )
+          }
         }
         resolve(resultado)
       } catch (error) {
@@ -557,13 +560,11 @@ Contrato.deleteContrato = function (nro, year, tipo) {
         `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
       )
       if (!result.length) {
-        console.log('entro en delete 2')
         result = await pool.query(
           `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
         )
       }
       if (result.length) {
-        console.log('entro en delete 3')
         result = await pool.query(
           `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
         )

@@ -292,12 +292,12 @@ apiRouter.put(
     check('monto_minimo')
       .isNumeric()
       .withMessage('El monto minimo de contrato debe ser numérico')
-      .toInt()
+      .toFloat()
       .optional({ nullable: true, checkFalsy: true }),
     check('monto_maximo')
       .isNumeric()
       .withMessage('El monto maximo de contrato debe ser numérico')
-      .toInt()
+      .toFloat()
       .optional({ nullable: true, checkFalsy: true }),
     check('lotes.*.nro')
       .isNumeric()
