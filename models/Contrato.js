@@ -399,7 +399,7 @@ Contrato.prototype.addContrato = async function () {
 
           // data input values:
           const values = lotes.map(lote => {
-            const formattedLote = {
+            const loteObj = {
               contrato_nro: nro,
               contrato_year: year,
               tipo_contrato_id: tipo,
@@ -408,7 +408,7 @@ Contrato.prototype.addContrato = async function () {
               lote_minimo: lote.minimo,
               lote_maximo: lote.maximo
             }
-            return formattedLote
+            return loteObj
           })
 
           // generating a multi-row insert query:
@@ -489,9 +489,9 @@ Contrato.prototype.updateContrato = async function () {
           )
 
           // data input values:
-          let formattedLote
+          let loteObj
           const values = lotes.map(lote => {
-            formattedLote = {
+            loteObj = {
               contrato_nro: nro,
               contrato_year: year,
               tipo_contrato_id: tipo,
@@ -500,10 +500,8 @@ Contrato.prototype.updateContrato = async function () {
               lote_minimo: lote.minimo,
               lote_maximo: lote.maximo
             }
-            lote.hasOwnProperty('newLote')
-              ? (formattedLote.newLote = true)
-              : formattedLote
-            return formattedLote
+            lote.hasOwnProperty('newLote') ? (loteObj.newLote = true) : loteObj
+            return loteObj
           })
 
           const newLotes = values.filter(lote => lote.hasOwnProperty('newLote'))
@@ -513,7 +511,7 @@ Contrato.prototype.updateContrato = async function () {
 
           const condition = pgp.as.format(
             ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
-            formattedLote
+            loteObj
           )
 
           // si se agregaron lotes nuevos se insertan en la bd

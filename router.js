@@ -389,5 +389,86 @@ apiRouter.get(
   auth,
   codigoController.apiGetCodigoById
 )
+apiRouter.post(
+  '/codigo-contratacion/:contrato/:year/:tipoContrato',
+  auth,
+  [
+    check('id')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .toUpperCase(),
+    check('moneda')
+      .not()
+      .isEmpty()
+      .withMessage('La moneda es obligatoria')
+      .isNumeric()
+      .withMessage('La moneda debe ser numérica')
+      .toInt(),
+    check('obervaciones')
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('rubros.*.nro')
+      .not()
+      .isEmpty()
+      .withMessage('El rubro es obligatorio')
+      .isNumeric()
+      .withMessage('El rubro debe ser numérico')
+      .toInt(),
+    check('rubros.*.monto')
+      .not()
+      .isEmpty()
+      .withMessage('El monto es obligatorio')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  codigoController.apiAddCodigo
+)
+apiRouter.put(
+  '/codigo-contratacion/:contrato/:year/:tipoContrato',
+  auth,
+  [
+    check('id')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .toUpperCase(),
+    check('moneda')
+      .not()
+      .isEmpty()
+      .withMessage('La moneda es obligatoria')
+      .isNumeric()
+      .withMessage('La moneda debe ser numérica')
+      .toInt(),
+    check('obervaciones')
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('rubros.*.nro')
+      .not()
+      .isEmpty()
+      .withMessage('El rubro es obligatorio')
+      .isNumeric()
+      .withMessage('El rubro debe ser numérico')
+      .toInt(),
+    check('rubros.*.monto')
+      .not()
+      .isEmpty()
+      .withMessage('El monto es obligatorio')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  codigoController.apiUpdateCodigo
+)
+apiRouter.delete(
+  '/codigo-contratacion/:id',
+  auth,
+  codigoController.apiDeleteCodigo
+)
 
 module.exports = apiRouter
