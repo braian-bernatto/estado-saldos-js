@@ -162,6 +162,39 @@ Licitacion.licitacionesSearch = async function (input) {
         ilike '%${input}%'
         order by licitacion_id desc)`)
 
+      if (!resultado.length) {
+        resultado =
+          await pool.query(`select * from licitacion natural join licitacion_tipo where licitacion_id in (select distinct licitacion_id from licitacion natural join licitacion_tipo
+        natural join contrato natural join empresa
+        where 
+        licitacion_descri || ' ' || 		   
+        licitacion_id::text || ' ' ||
+        licitacion_tipo_abreviatura || ' ' ||
+			  licitacion_nro::text || '/' ||
+			  licitacion_year::text || ' ' ||
+        contrato_nro::text || '/' ||
+        contrato_year::text || ' ' ||
+        licitacion_id::text || ' ' ||
+        empresa_ruc || ' ' || 
+        empresa_nombre_fantasia
+        ilike '%${input}%'
+        order by licitacion_id desc)`)
+      }
+
+      if (!resultado.length) {
+        resultado =
+          await pool.query(`select * from licitacion natural join licitacion_tipo where licitacion_id in (select distinct licitacion_id from licitacion natural join licitacion_tipo
+        where 
+        licitacion_descri || ' ' || 		   
+        licitacion_id::text || ' ' ||
+        licitacion_tipo_abreviatura || ' ' ||
+			  licitacion_nro::text || '/' ||
+			  licitacion_year::text || ' ' ||
+        licitacion_id::text
+        ilike '%${input}%'
+        order by licitacion_id desc)`)
+      }
+
       resultado.forEach(async licitacion => {
         //ver si tiene adenda
         let adenda = await pool.query(
