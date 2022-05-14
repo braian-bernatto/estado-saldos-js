@@ -12,6 +12,15 @@ exports.apiGetLicitaciones = async function (req, res) {
   }
 }
 
+exports.apiCheckLicitacionId = async function (req, res) {
+  try {
+    let respuesta = await Licitacion.checkIdUtilizado(req.params.id)
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
 exports.apiGetLicitacionesEnlaces = async function (req, res) {
   try {
     let licitaciones = await Licitacion.allLicitacionesEnlaces()

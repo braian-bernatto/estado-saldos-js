@@ -12,19 +12,38 @@ Contrato.allContratos = async function (licitacionID) {
   let x = 0
   return new Promise(async (resolve, reject) => {
     try {
-      let resultado =
-        await pool.query(`select * from licitacion natural join licitacion_tipo
-      natural join contrato natural join codigo_contratacion natural join
-      empresa where licitacion_id = ${licitacionID} and codigo_contratacion_id
-	    not in (select codigo_contratacion_id from adenda
-      natural join contrato natural join adenda_cc where
-      licitacion_id =  ${licitacionID} ) order by contrato.contrato_nro`)
-
-      if (!resultado.length) {
-        resultado =
-          await pool.query(`select * from licitacion natural join licitacion_tipo
-      natural join contrato natural join empresa where licitacion_id = ${licitacionID} order by contrato.contrato_nro`)
-      }
+      let resultado = await pool.query(`SELECT L.LICITACION_ID,
+      L.LICITACION_NRO,
+      L.LICITACION_YEAR,
+      L.LICITACION_DESCRI,
+      L.LICITACION_YEAR,
+      LT.LICITACION_TIPO_ABREVIATURA,
+      C.CONTRATO_NRO,
+      C.CONTRATO_YEAR,
+      C.TIPO_CONTRATO_ID,
+      C.CONTRATO_FIRMA,
+      C.CONTRATO_VENCIMIENTO,
+      C.MONEDA_ID,
+      C.CONTRATO_ACTIVO,
+      CC.CODIGO_CONTRATACION_ID,
+      CC.CODIGO_CONTRATACION_OBSERVACION,
+      E.EMPRESA_RUC,
+      E.EMPRESA_NOMBRE_FANTASIA
+      FROM LICITACION L
+      NATURAL JOIN LICITACION_TIPO LT
+      NATURAL JOIN EMPRESA E
+      NATURAL JOIN CONTRATO C
+      LEFT JOIN CODIGO_CONTRATACION CC ON C.CONTRATO_NRO = CC.CONTRATO_NRO
+      AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR
+      AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID
+      WHERE L.LICITACION_ID = ${licitacionID}
+        AND CC.CODIGO_CONTRATACION_ID not in
+          (SELECT CODIGO_CONTRATACION_ID
+            FROM ADENDA
+            NATURAL JOIN CONTRATO
+            NATURAL JOIN ADENDA_CC
+            WHERE LICITACION_ID = ${licitacionID} )
+      ORDER BY C.CONTRATO_NRO`)
 
       resultado.forEach(async contrato => {
         let adenda = await pool.query(
@@ -64,6 +83,19 @@ Contrato.allContratosEnlaces = async function (licitacionID) {
       } else {
         resolve(resultado)
       }
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
+Contrato.checkNroUtilizado = async function (nro, tipo, year) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `select * from contrato where contrato_nro = ${nro} and tipo_contrato_id = ${tipo} and contrato_year = ${year}`
+      )
+      resultado.length ? resolve(false) : resolve(true)
     } catch (error) {
       console.log(error)
     }

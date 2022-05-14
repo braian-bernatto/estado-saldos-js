@@ -11,6 +11,19 @@ exports.apiGetContratos = async function (req, res) {
   }
 }
 
+exports.apiCheckContratoNro = async function (req, res) {
+  try {
+    let respuesta = await Contrato.checkNroUtilizado(
+      req.params.nro,
+      req.params.tipo,
+      req.params.year
+    )
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
 exports.apiGetContratosEnlaces = async function (req, res) {
   try {
     let contratos = await Contrato.allContratosEnlaces(req.params.id)

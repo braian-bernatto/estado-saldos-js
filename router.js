@@ -46,6 +46,10 @@ apiRouter.get(
 )
 apiRouter.get('/licitaciones/:id', licitacionController.apiGetLicitacionByID)
 apiRouter.get(
+  '/licitaciones/check/:id',
+  licitacionController.apiCheckLicitacionId
+)
+apiRouter.get(
   '/licitaciones/activo/:estado',
   auth,
   licitacionController.apiGetLicitacionesByEstado
@@ -126,6 +130,11 @@ apiRouter.get(
   '/licitaciones/:id/contratos',
   auth,
   contratoController.apiGetContratos
+)
+apiRouter.get(
+  '/contrato/:nro/:tipo/:year',
+  auth,
+  contratoController.apiCheckContratoNro
 )
 apiRouter.get(
   '/licitaciones/contratos/enlaces',

@@ -48,6 +48,19 @@ Licitacion.allLicitaciones = async function () {
   })
 }
 
+Licitacion.checkIdUtilizado = async function (id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `select * from licitacion where licitacion_id = ${id}`
+      )
+      resultado.length ? resolve(false) : resolve(true)
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
 Licitacion.allLicitacionesEnlaces = async function () {
   return new Promise(async (resolve, reject) => {
     try {
