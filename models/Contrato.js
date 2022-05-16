@@ -489,12 +489,14 @@ Contrato.prototype.updateContrato = async function () {
           SET contrato_firma='${fecha_firma}', contrato_vencimiento='${
             cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
           }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
-          WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}    `
+          WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
         )
         if (lotes === false) {
           await pool.query(
             `UPDATE contrato_detalle
-            SET contrato_minimo=${monto_minimo}, contrato_maximo=${monto_maximo}
+            SET contrato_minimo=${
+              monto_minimo ? monto_minimo : null
+            }, contrato_maximo=${monto_maximo}
             WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
           )
         }
