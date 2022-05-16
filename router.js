@@ -13,6 +13,7 @@ const tipoContratoController = require('./controllers/tipoContratoController')
 const tipoOrdenController = require('./controllers/tipoOrdenController')
 const monedaController = require('./controllers/monedaController')
 const codigoController = require('./controllers/codigoController')
+const adendaController = require('./controllers/adendaController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -483,6 +484,13 @@ apiRouter.delete(
   '/codigo-contratacion/:id',
   auth,
   codigoController.apiDeleteCodigo
+)
+
+// adenda routes
+apiRouter.get(
+  '/contratos/:nroContrato/:year/:tipo/adenda/:nroAdenda',
+  auth,
+  adendaController.apiCheckAdendaNro
 )
 
 module.exports = apiRouter
