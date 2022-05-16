@@ -394,9 +394,14 @@ apiRouter.get('/moneda', auth, monedaController.apiGetMonedas)
 // codigo contratacion routes
 apiRouter.get('/codigo-contratacion', auth, codigoController.apiGetCodigos)
 apiRouter.get(
-  '/codigo-contratacion/:contrato/:year/:tipoContrato',
+  '/codigo-contratacion/:id',
   auth,
   codigoController.apiGetCodigoById
+)
+apiRouter.get(
+  '/codigo-contratacion/:contrato/:year/:tipoContrato',
+  auth,
+  codigoController.apiGetCodigoByContrato
 )
 apiRouter.post(
   '/codigo-contratacion/:contrato/:year/:tipoContrato',

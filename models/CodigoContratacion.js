@@ -19,7 +19,20 @@ CodigoContratacion.allCodigoContratacion = async function () {
   })
 }
 
-CodigoContratacion.codigoContratacionById = async function ({
+CodigoContratacion.codigoContratacionById = async function (id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `select * from codigo_contratacion where codigo_contratacion_id ilike '%${id}%'`
+      )
+      resultado.length ? resolve(false) : resolve(true)
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
+CodigoContratacion.codigoContratacionByContrato = async function ({
   contrato,
   year,
   tipoContrato
@@ -82,7 +95,7 @@ CodigoContratacion.prototype.addCodigo = async function () {
 
         resolve(resultado)
       } catch (error) {
-        this.errors.push('Please try again later...')
+        this.errors.push(error.message)
         console.log(error.message)
         reject(this.errors)
       }

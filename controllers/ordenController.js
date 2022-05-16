@@ -5,7 +5,7 @@ exports.apiGetOrdenes = async function (req, res) {
     let ordenes = await Orden.ordenesByContrato(req.params.id, req.params.nro)
     res.json(ordenes)
   } catch (error) {
-    res.status(500).send('Error')
+    res.status(500).send(error)
   }
 }
 
@@ -18,7 +18,7 @@ exports.apiCheckOrdenNro = async function (req, res) {
     )
     res.json(respuesta)
   } catch (error) {
-    res.status(500).send('Error')
+    res.status(500).send(error)
   }
 }
 
@@ -27,6 +27,6 @@ exports.apiGetOrdenesEnlaces = async function (req, res) {
     let ordenes = await Orden.ordenesEnlaces()
     res.json(ordenes)
   } catch (error) {
-    res.status(500).send('Error')
+    res.status(500).send(error)
   }
 }
