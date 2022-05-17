@@ -12,9 +12,8 @@ Contrato.allContratos = async function (licitacionID) {
   let x = 0
   return new Promise(async (resolve, reject) => {
     try {
-      let resultado = await pool.query(`SELECT L.LICITACION_ID,
-	L.LICITACION_NRO,
-	L.LICITACION_YEAR,
+      let resultado =
+        await pool.query(`SELECT L.LICITACION_ID, L.LICITACION_YEAR,
 	L.LICITACION_DESCRI,
 	L.LICITACION_YEAR,
 	LT.LICITACION_TIPO_ABREVIATURA,
@@ -38,7 +37,6 @@ AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR
 AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID
 WHERE L.LICITACION_ID = ${licitacionID}
 				AND CC.CODIGO_CONTRATACION_ID not ilike '%AC%'
-				OR CC.CODIGO_CONTRATACION_ID IS NULL
         AND CC.CODIGO_CONTRATACION_ID not in
           (SELECT CODIGO_CONTRATACION_ID
             FROM ADENDA
@@ -46,6 +44,44 @@ WHERE L.LICITACION_ID = ${licitacionID}
             NATURAL JOIN ADENDA_CC
             WHERE LICITACION_ID = ${licitacionID} )
       ORDER BY C.CONTRATO_NRO`)
+
+      let resultadoSinCodigo =
+        await pool.query(`SELECT L.LICITACION_ID, L.LICITACION_NRO,
+      L.LICITACION_YEAR,
+      L.LICITACION_DESCRI,
+      L.LICITACION_YEAR,
+      LT.LICITACION_TIPO_ABREVIATURA,
+      C.CONTRATO_NRO,
+      C.CONTRATO_YEAR,
+      C.TIPO_CONTRATO_ID,
+      C.CONTRATO_FIRMA,
+      C.CONTRATO_VENCIMIENTO,
+      C.MONEDA_ID,
+      C.CONTRATO_ACTIVO,
+      CC.CODIGO_CONTRATACION_ID,
+      CC.CODIGO_CONTRATACION_OBSERVACION,
+      E.EMPRESA_RUC,
+      E.EMPRESA_NOMBRE_FANTASIA
+    FROM LICITACION L
+    NATURAL JOIN LICITACION_TIPO LT
+    NATURAL JOIN EMPRESA E
+    NATURAL JOIN CONTRATO C
+    LEFT JOIN CODIGO_CONTRATACION CC ON C.CONTRATO_NRO = CC.CONTRATO_NRO
+    AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR
+    AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID
+    WHERE L.LICITACION_ID = ${licitacionID}
+            AND CC.CODIGO_CONTRATACION_ID is NULL
+            AND CC.CODIGO_CONTRATACION_ID not in
+              (SELECT CODIGO_CONTRATACION_ID
+                FROM ADENDA
+                NATURAL JOIN CONTRATO
+                NATURAL JOIN ADENDA_CC
+                WHERE LICITACION_ID = ${licitacionID} )
+          ORDER BY C.CONTRATO_NRO`)
+
+      if (resultadoSinCodigo.length) {
+        resultado = resultado.concat(resultadoSinCodigo)
+      }
 
       resultado.forEach(async contrato => {
         let adenda = await pool.query(
@@ -242,7 +278,7 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
       if (!resultado.length) {
         resultado =
           await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
-      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%' and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
       }
 
       // adjudicacion normal
