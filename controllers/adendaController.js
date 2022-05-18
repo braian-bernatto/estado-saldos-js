@@ -15,15 +15,15 @@ exports.apiCheckAdendaNro = async function (req, res) {
   }
 }
 
-exports.apiAddContrato = async function (req, res) {
+exports.apiAddAdenda = async function (req, res) {
   // revisar si hay errores
   const errores = validationResult(req)
   if (!errores.isEmpty()) {
     return res.status(400).json({ errores: errores.array() })
   }
   try {
-    let contrato = await new Contrato(req.body).addContrato()
-    res.json(contrato)
+    let adenda = await new Adenda(req.body).addAdenda()
+    res.json(adenda)
   } catch (error) {
     res.status(500).send('Error')
   }
