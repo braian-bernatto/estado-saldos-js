@@ -148,16 +148,13 @@ Contrato.contratoByNro = async function (licitacionID, contratoNro) {
       natural join contrato natural join codigo_contratacion natural join
       empresa where licitacion_id = ${licitacionID} and 
       contrato_nro = ${contratoNro} and
-      codigo_contratacion_id
-	    not in (select codigo_contratacion_id from adenda
-      natural join contrato natural join adenda_cc where
-      licitacion_id =  ${licitacionID} ) order by contrato.contrato_nro`)
+      codigo_contratacion_id not ilike '%AC%' order by contrato_nro`)
 
       if (!resultado.length) {
         resultado =
           await pool.query(`select * from licitacion natural join licitacion_tipo
       natural join contrato natural join empresa where licitacion_id = ${licitacionID} and 
-      contrato_nro = ${contratoNro} order by contrato.contrato_nro`)
+      contrato_nro = ${contratoNro} order by contrato_nro`)
       }
 
       let adenda = await pool.query(
@@ -271,14 +268,14 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
     try {
       // adjudicacion normal
       let resultado = await pool.query(
-        `select * from contrato natural join contrato_detalle natural join codigo_contratacion natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`
+        `select * from contrato natural join contrato_detalle natural join codigo_contratacion natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%'`
       )
 
       // adjudicacion por lote
       if (!resultado.length) {
         resultado =
           await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
-      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%' and codigo_contratacion_id not in(select distinct(codigo_contratacion_id) from adenda_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`)
+      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%' order by contrato_lote_id`)
       }
 
       // adjudicacion normal
