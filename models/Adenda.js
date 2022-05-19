@@ -34,19 +34,18 @@ Adenda.finalizarContrato = async function (licitacionID, contratoNro, estado) {
 
 Adenda.prototype.addAdenda = async function () {
   const {
-    licitacion_id,
-    activo,
-    cumplimiento,
+    contrato_nro,
+    contrato_year,
+    tipo_contrato_id,
     nro,
-    tipo,
-    year,
-    moneda,
-    empresa,
     fecha_firma,
-    fecha_vencimiento,
+    fecha_ampliada,
     lotes,
-    monto_minimo,
-    monto_maximo
+    rubros,
+    codigo,
+    disminucion,
+    observaciones,
+    monto
   } = this.data
 
   // only if there are no errors proceedo to save into the database
@@ -60,23 +59,24 @@ Adenda.prototype.addAdenda = async function () {
             TIPO_CONTRATO_ID,
             ADENDA_FIRMA,
             ADENDA_FECHA,   
+            ADENDA_OBSERVACION)   
             VALUES (${nro}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id}, '${fecha_firma}', ${
             fecha_ampliada ? "'" + fecha_ampliada + "'" : null
-          })`
+          }, '${observaciones ? "'" + observaciones + "'" : null}')`
         )
         if (monto) {
           if (disminucion) {
             const cs = new pgp.helpers.ColumnSet(
               [
                 'adenda_nro',
-                'RUBRO_ID',
+                'rubro_id',
                 'contrato_nro',
                 'contrato_year',
                 'tipo_contrato_id',
-                'ADENDA_DISMINUCION_MONTO'
+                'adenda_disminucion_monto'
               ],
               {
-                table: 'ADENDA_DISMINUCION'
+                table: 'adenda_disminucion'
               }
             )
 
