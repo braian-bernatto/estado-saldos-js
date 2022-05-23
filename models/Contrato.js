@@ -358,7 +358,7 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
 
       // adenda con lotes
       let lotes_ampliacion = await pool.query(
-        `select * from adenda_lote natural join adenda natural join adenda_cc natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `select * from adenda_lote natural join adenda natural join adenda_cc natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} order by adenda_nro desc, contrato_lote_id asc`
       )
 
       ampliacion.length ? '' : (ampliacion = false)
@@ -371,7 +371,12 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
 
       // adenda disminucion con lotes
       let lotes_disminucion = await pool.query(
-        `select * from adenda_lote natural join adenda_disminucion natural join adenda natural join contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `SELECT distinct ad.adenda_nro, al.contrato_lote_id, cl.lote_descri, al.adenda_lote_monto
+        FROM ADENDA_LOTE al
+        NATURAL JOIN ADENDA_DISMINUCION ad
+        NATURAL JOIN ADENDA a
+        NATURAL JOIN CONTRATO c
+        NATURAL JOIN CONTRATO_LOTE cl WHERE c.licitacion_id = ${licitacionID} and c.contrato_nro = ${contratoNro}`
       )
 
       disminucion.length ? '' : (disminucion = false)
@@ -434,57 +439,59 @@ Contrato.prototype.addContrato = async function () {
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
       try {
-        let resultado = await pool.query(
-          `INSERT INTO contrato(
+        pool.task(async t => {
+          let resultado = await t.query(
+            `INSERT INTO contrato(
             contrato_nro, contrato_year, tipo_contrato_id, contrato_firma, contrato_vencimiento, licitacion_id, empresa_id, moneda_id, contrato_activo)    
             VALUES (${nro}, ${year}, ${tipo}, '${fecha_firma}', '${
-            cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
-          }', ${licitacion_id}, ${empresa}, ${moneda}, ${activo})`
-        )
-        if (lotes === false) {
-          await pool.query(
-            `INSERT INTO contrato_detalle(
+              cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
+            }', ${licitacion_id}, ${empresa}, ${moneda}, ${activo})`
+          )
+          if (lotes === false) {
+            await t.query(
+              `INSERT INTO contrato_detalle(
               contrato_nro, contrato_year, tipo_contrato_id, contrato_minimo, contrato_maximo)
               VALUES (${nro}, ${year}, ${tipo}, ${monto_minimo}, ${monto_maximo})`
-          )
-        }
-        if (Array.isArray(lotes)) {
-          const cs = new pgp.helpers.ColumnSet(
-            [
-              'contrato_lote_id',
-              'contrato_nro',
-              'contrato_year',
-              'tipo_contrato_id',
-              'lote_descri',
-              'lote_minimo',
-              'lote_maximo'
-            ],
-            {
-              table: 'contrato_lote'
-            }
-          )
+            )
+          }
+          if (Array.isArray(lotes)) {
+            const cs = new pgp.helpers.ColumnSet(
+              [
+                'contrato_lote_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'lote_descri',
+                'lote_minimo',
+                'lote_maximo'
+              ],
+              {
+                table: 'contrato_lote'
+              }
+            )
 
-          // data input values:
-          const values = lotes.map(lote => {
-            const loteObj = {
-              contrato_nro: nro,
-              contrato_year: year,
-              tipo_contrato_id: tipo,
-              contrato_lote_id: lote.nro,
-              lote_descri: lote.nombre,
-              lote_minimo: lote.minimo,
-              lote_maximo: lote.maximo
-            }
-            return loteObj
-          })
+            // data input values:
+            const values = lotes.map(lote => {
+              const loteObj = {
+                contrato_nro: nro,
+                contrato_year: year,
+                tipo_contrato_id: tipo,
+                contrato_lote_id: lote.nro,
+                lote_descri: lote.nombre,
+                lote_minimo: lote.minimo,
+                lote_maximo: lote.maximo
+              }
+              return loteObj
+            })
 
-          // generating a multi-row insert query:
-          const query = pgp.helpers.insert(values, cs)
+            // generating a multi-row insert query:
+            const query = pgp.helpers.insert(values, cs)
 
-          // executing the query:
-          await pool.none(query)
-        }
-        resolve(resultado)
+            // executing the query:
+            await t.none(query)
+          }
+          resolve(resultado)
+        })
       } catch (error) {
         this.errors.push('Please try again later...')
         console.log(error.message)
@@ -517,98 +524,106 @@ Contrato.prototype.updateContrato = async function () {
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
       try {
-        let resultado = await pool.query(
-          `UPDATE contrato
+        pool.task(async t => {
+          let resultado = await t.query(
+            `UPDATE contrato
           SET contrato_firma='${fecha_firma}', contrato_vencimiento='${
-            cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
-          }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
+              cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
+            }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
           WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
-        )
-        if (lotes === false) {
-          await pool.query(
-            `UPDATE contrato_detalle
+          )
+          if (lotes === false) {
+            await t.query(
+              `UPDATE contrato_detalle
             SET contrato_minimo=${
               monto_minimo ? monto_minimo : null
             }, contrato_maximo=${monto_maximo}
             WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
-          )
-        }
-        if (Array.isArray(lotes)) {
-          const csUpdate = new pgp.helpers.ColumnSet(
-            ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
-            {
-              table: 'contrato_lote'
-            }
-          )
-
-          // si se agregan nuevos lotes al contrato se insertan
-          const csInsert = new pgp.helpers.ColumnSet(
-            [
-              'contrato_lote_id',
-              'contrato_nro',
-              'contrato_year',
-              'tipo_contrato_id',
-              'lote_descri',
-              'lote_minimo',
-              'lote_maximo'
-            ],
-            {
-              table: 'contrato_lote'
-            }
-          )
-
-          // data input values:
-          let loteObj
-          const values = lotes.map(lote => {
-            loteObj = {
-              contrato_nro: nro,
-              contrato_year: year,
-              tipo_contrato_id: tipo,
-              contrato_lote_id: lote.nro,
-              lote_descri: lote.nombre,
-              lote_minimo: lote.minimo,
-              lote_maximo: lote.maximo
-            }
-            lote.hasOwnProperty('newLote') ? (loteObj.newLote = true) : loteObj
-            return loteObj
-          })
-
-          const newLotes = values.filter(lote => lote.hasOwnProperty('newLote'))
-          const lotesActualizar = values.filter(
-            lote => !lote.hasOwnProperty('newLote')
-          )
-
-          const condition = pgp.as.format(
-            ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
-            loteObj
-          )
-
-          // si se agregaron lotes nuevos se insertan en la bd
-          if (newLotes.length > 0) {
-            // generating a multi-row insert query:
-            const queryInsert = pgp.helpers.insert(newLotes, csInsert)
-            // executing the query:
-            await pool.none(queryInsert)
-          }
-
-          // generating a multi-row insert query:
-          const queryUpdate =
-            pgp.helpers.update(lotesActualizar, csUpdate) + condition
-          // executing the query:
-          await pool.none(queryUpdate)
-
-          //si se eliminan lotes del contrato
-          if (eliminadosArray.length > 0) {
-            const ids = eliminadosArray.map(lote => {
-              return lote.nro
-            })
-            await pool.none(
-              `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} and contrato_lote_id in ($1:list)`,
-              [ids]
             )
           }
-        }
-        resolve(resultado)
+          if (Array.isArray(lotes)) {
+            const csUpdate = new pgp.helpers.ColumnSet(
+              ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
+              {
+                table: 'contrato_lote'
+              }
+            )
+
+            // si se agregan nuevos lotes al contrato se insertan
+            const csInsert = new pgp.helpers.ColumnSet(
+              [
+                'contrato_lote_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'lote_descri',
+                'lote_minimo',
+                'lote_maximo'
+              ],
+              {
+                table: 'contrato_lote'
+              }
+            )
+
+            // data input values:
+            let loteObj
+            const values = lotes.map(lote => {
+              loteObj = {
+                contrato_nro: nro,
+                contrato_year: year,
+                tipo_contrato_id: tipo,
+                contrato_lote_id: lote.nro,
+                lote_descri: lote.nombre,
+                lote_minimo: lote.minimo,
+                lote_maximo: lote.maximo
+              }
+              lote.hasOwnProperty('newLote')
+                ? (loteObj.newLote = true)
+                : loteObj
+              return loteObj
+            })
+
+            const newLotes = values.filter(lote =>
+              lote.hasOwnProperty('newLote')
+            )
+            const lotesActualizar = values.filter(
+              lote => !lote.hasOwnProperty('newLote')
+            )
+
+            const condition = pgp.as.format(
+              ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
+              loteObj
+            )
+
+            // si se agregaron lotes nuevos se insertan en la bd
+            if (newLotes.length > 0) {
+              // generating a multi-row insert query:
+              const queryInsert = pgp.helpers.insert(newLotes, csInsert)
+              // executing the query:
+              await t.none(queryInsert)
+            }
+
+            // generating a multi-row insert query:
+            if (lotesActualizar.length > 0) {
+              const queryUpdate =
+                pgp.helpers.update(lotesActualizar, csUpdate) + condition
+              // executing the query:
+              await t.none(queryUpdate)
+            }
+
+            //si se eliminan lotes del contrato
+            if (eliminadosArray.length > 0) {
+              const ids = eliminadosArray.map(lote => {
+                return lote.nro
+              })
+              await t.none(
+                `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} and contrato_lote_id in ($1:list)`,
+                [ids]
+              )
+            }
+          }
+          resolve(resultado)
+        })
       } catch (error) {
         this.errors.push('Please try again later...')
         console.log(error.message)
@@ -623,20 +638,22 @@ Contrato.prototype.updateContrato = async function () {
 Contrato.deleteContrato = function (nro, year, tipo) {
   return new Promise(async (resolve, reject) => {
     try {
-      let result = await pool.query(
-        `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-      )
-      if (!result.length) {
-        result = await pool.query(
-          `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+      pool.task(async t => {
+        let result = await t.query(
+          `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
         )
-      }
-      if (result.length) {
-        result = await pool.query(
-          `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-        )
-      }
-      resolve()
+        if (!result.length) {
+          result = await t.query(
+            `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+          )
+        }
+        if (result.length) {
+          result = await t.query(
+            `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+          )
+        }
+        resolve()
+      })
     } catch (error) {
       reject(error)
     }

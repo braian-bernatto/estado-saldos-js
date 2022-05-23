@@ -567,5 +567,85 @@ apiRouter.post(
   ],
   adendaController.apiAddAdenda
 )
+apiRouter.put(
+  '/contratos/:nroContrato/:year/:tipo/adenda/:nroAdenda',
+  auth,
+  [
+    check('nro', 'El nro de adenda es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .toInt(),
+    check('codigo')
+      .isString()
+      .withMessage('El nro de C.C. debe ser un string')
+      .toUpperCase()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('observaciones')
+      .isString()
+      .withMessage('La observación debe ser un string')
+      .toUpperCase()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('contrato_nro', 'El nro de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .toInt(),
+    check('contrato_year', 'El año es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .toInt(),
+    check('tipo_contrato_id')
+      .not()
+      .isEmpty()
+      .withMessage('El tipo es obligatorio')
+      .isNumeric()
+      .withMessage('El tipo debe ser numérico')
+      .toInt(),
+    check('fecha_firma').isDate().withMessage('La fecha de firma es inválida'),
+    check('fecha_ampliada')
+      .isDate()
+      .withMessage('La fecha de ampliada es inválida')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('disminucion')
+      .not()
+      .isEmpty()
+      .withMessage('Se debe especificar si es una adenda de disminución')
+      .isBoolean()
+      .toBoolean(),
+    check('monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.lote_id')
+      .isNumeric()
+      .withMessage('El número de lote debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('rubros.*.nro')
+      .isNumeric()
+      .withMessage('El rubro debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('rubros.*.monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  adendaController.apiUpdateAdenda
+)
+apiRouter.delete(
+  '/contratos/:nroContrato/:year/:tipo/adenda/:nroAdenda',
+  auth,
+  adendaController.apiDeleteAdenda
+)
 
 module.exports = apiRouter

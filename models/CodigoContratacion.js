@@ -124,7 +124,7 @@ CodigoContratacion.prototype.updateCodigo = async function () {
           }
         )
 
-        // si se agregan nuevos lotes al contrato se insertan
+        // si se agregan nuevos rubros
         const csInsert = new pgp.helpers.ColumnSet(
           ['codigo_contratacion_id', 'rubro_id', 'codigo_contratacion_monto'],
           {
@@ -172,7 +172,7 @@ CodigoContratacion.prototype.updateCodigo = async function () {
         // executing the query:
         await pool.none(queryUpdate)
 
-        //si se eliminan lotes del contrato
+        //si se eliminan rubros
         if (eliminadosArray.length > 0) {
           const ids = eliminadosArray.map(rubro => {
             return rubro.nro

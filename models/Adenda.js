@@ -6,7 +6,12 @@ const Adenda = function (data) {
   this.errors = []
 }
 
-Adenda.checkNroUtilizado = async function (nroAdenda, nroContrato, tipo, year) {
+Adenda.checkNroUtilizado = async function ({
+  nroAdenda,
+  nroContrato,
+  tipo,
+  year
+}) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
@@ -52,8 +57,9 @@ Adenda.prototype.addAdenda = async function () {
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
       try {
-        let resultado = await pool.query(
-          `INSERT INTO ADENDA(ADENDA_NRO,
+        pool.task(async t => {
+          let resultado = await t.query(
+            `INSERT INTO ADENDA(ADENDA_NRO,
             CONTRATO_NRO,
             CONTRATO_YEAR,
             TIPO_CONTRATO_ID,
@@ -61,12 +67,145 @@ Adenda.prototype.addAdenda = async function () {
             ADENDA_FECHA,   
             ADENDA_OBSERVACION)   
             VALUES (${nro}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id}, '${fecha_firma}', ${
-            fecha_ampliada ? "'" + fecha_ampliada + "'" : null
-          }, '${observaciones ? "'" + observaciones + "'" : null}')`
-        )
-        if (monto) {
-          if (disminucion) {
+              fecha_ampliada ? "'" + fecha_ampliada + "'" : null
+            }, ${observaciones ? "'" + observaciones + "'" : null})`
+          )
+          if (monto) {
+            if (disminucion) {
+              const cs = new pgp.helpers.ColumnSet(
+                [
+                  'adenda_nro',
+                  'rubro_id',
+                  'contrato_nro',
+                  'contrato_year',
+                  'tipo_contrato_id',
+                  'adenda_disminucion_monto'
+                ],
+                {
+                  table: 'adenda_disminucion'
+                }
+              )
+
+              // data input values:
+              const values = rubros.map(rubro => {
+                const rubroObj = {
+                  adenda_nro: nro,
+                  contrato_nro: contrato_nro,
+                  contrato_year: contrato_year,
+                  tipo_contrato_id: tipo_contrato_id,
+                  rubro_id: rubro.nro,
+                  adenda_disminucion_monto: rubro.monto
+                }
+                return rubroObj
+              })
+
+              // generating a multi-row insert query:
+              const query = pgp.helpers.insert(values, cs)
+
+              // executing the query:
+              await t.none(query)
+            } else {
+              await t.query(
+                `INSERT INTO ADENDA_CC(CODIGO_CONTRATACION_ID,
+                ADENDA_NRO,
+                CONTRATO_NRO,
+                CONTRATO_YEAR,
+                TIPO_CONTRATO_ID,
+                ADENDA_MONTO)
+                VALUES ('${codigo}', ${nro}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id}, ${monto})`
+              )
+            }
+          }
+
+          if (Array.isArray(lotes)) {
             const cs = new pgp.helpers.ColumnSet(
+              [
+                'adenda_nro',
+                'contrato_lote_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'adenda_lote_monto'
+              ],
+              {
+                table: 'adenda_lote'
+              }
+            )
+
+            // data input values:
+            const values = lotes.map(lote => {
+              const loteObj = {
+                adenda_nro: nro,
+                contrato_lote_id: lote.lote_id,
+                contrato_nro: contrato_nro,
+                contrato_year: contrato_year,
+                tipo_contrato_id: tipo_contrato_id,
+                adenda_lote_monto: lote.monto
+              }
+              return loteObj
+            })
+
+            // generating a multi-row insert query:
+            const query = pgp.helpers.insert(values, cs)
+
+            // executing the query:
+            await t.none(query)
+          }
+          resolve(resultado)
+        })
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Adenda.prototype.updateAdenda = async function () {
+  const {
+    contrato_nro,
+    contrato_year,
+    tipo_contrato_id,
+    nro,
+    fecha_firma,
+    fecha_ampliada,
+    lotes,
+    rubros,
+    codigo,
+    disminucion,
+    observaciones,
+    monto
+  } = this.data
+
+  const lotesEliminadosArray = this.data.lotesEliminados
+    ? this.data.lotesEliminados
+    : []
+  const rubrosEliminadosArray = this.data.rubrosEliminados
+    ? this.data.rubrosEliminados
+    : []
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        pool.task(async t => {
+          if (disminucion) {
+            const csUpdate = new pgp.helpers.ColumnSet(
+              [
+                'rubro_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'adenda_disminucion_monto'
+              ],
+              {
+                table: 'adenda_disminucion'
+              }
+            )
+            // si se agregan nuevos rubros
+            const csInsert = new pgp.helpers.ColumnSet(
               [
                 'adenda_nro',
                 'rubro_id',
@@ -81,8 +220,9 @@ Adenda.prototype.addAdenda = async function () {
             )
 
             // data input values:
+            let rubroObj
             const values = rubros.map(rubro => {
-              const rubroObj = {
+              rubroObj = {
                 adenda_nro: nro,
                 contrato_nro: contrato_nro,
                 contrato_year: contrato_year,
@@ -90,184 +230,147 @@ Adenda.prototype.addAdenda = async function () {
                 rubro_id: rubro.nro,
                 adenda_disminucion_monto: rubro.monto
               }
+              rubro.hasOwnProperty('newRubro')
+                ? (rubroObj.newRubro = true)
+                : rubroObj
               return rubroObj
             })
 
-            // generating a multi-row insert query:
-            const query = pgp.helpers.insert(values, cs)
+            const newRubros = values.filter(rubro =>
+              rubro.hasOwnProperty('newRubro')
+            )
+            const rubrosActualizar = values.filter(
+              rubro => !rubro.hasOwnProperty('newRubro')
+            )
 
-            // executing the query:
-            await pool.none(query)
+            const condition = pgp.as.format(
+              ` WHERE t.adenda_nro=${nro} and t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.rubro_id=v.rubro_id`,
+              rubroObj
+            )
+
+            // si se agregaron rubros nuevos se insertan en la bd
+            if (newRubros.length > 0) {
+              // generating a multi-row insert query:
+              const queryInsert = pgp.helpers.insert(newRubros, csInsert)
+              // executing the query:
+              await t.none(queryInsert)
+            }
+
+            // generating a multi-row insert query:
+            if (rubrosActualizar.length > 0) {
+              const queryUpdate =
+                pgp.helpers.update(rubrosActualizar, csUpdate) + condition
+              // executing the query:
+              await t.none(queryUpdate)
+            }
+
+            //si se eliminan rubros
+            if (rubrosEliminadosArray.length > 0) {
+              const ids = rubrosEliminadosArray.map(rubro => {
+                return rubro.nro
+              })
+              await t.none(
+                `delete from adenda_disminucion where adenda_nro=${nro} and contrato_nro=${contrato_nro} and contrato_year=${contrato_year} and tipo_contrato_id=${tipo_contrato_id} and rubro_id in ($1:list)`,
+                [ids]
+              )
+            }
           } else {
-            await pool.query(
-              `INSERT INTO ADENDA_CC(CODIGO_CONTRATACION_ID,
-                ADENDA_NRO,
-                CONTRATO_NRO,
-                CONTRATO_YEAR,
-                TIPO_CONTRATO_ID,
-                ADENDA_MONTO)
-                VALUES ('${codigo}', ${nro}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id}, ${monto})`
+            // si es adenda de ampliacion
+            await t.any(
+              `UPDATE adenda_cc
+              SET adenda_monto=${monto} WHERE codigo_contratacion_id ilike '%${codigo}%' and adenda_nro = ${nro} and  contrato_nro = ${contrato_nro} and contrato_year = ${contrato_year} and tipo_contrato_id = ${tipo_contrato_id}`
             )
           }
-        }
 
-        if (Array.isArray(lotes)) {
-          const cs = new pgp.helpers.ColumnSet(
-            [
-              'adenda_nro',
-              'contrato_lote_id',
-              'contrato_nro',
-              'contrato_year',
-              'tipo_contrato_id',
-              'adenda_lote_monto'
-            ],
-            {
-              table: 'adenda_lote'
-            }
-          )
+          if (Array.isArray(lotes)) {
+            const csUpdate = new pgp.helpers.ColumnSet(
+              ['contrato_lote_id', 'adenda_lote_monto'],
+              {
+                table: 'adenda_lote'
+              }
+            )
 
-          // data input values:
-          const values = lotes.map(lote => {
-            const loteObj = {
-              adenda_nro: nro,
-              contrato_lote_id: lote.lote_id,
-              contrato_nro: contrato_nro,
-              contrato_year: contrato_year,
-              tipo_contrato_id: tipo_contrato_id,
-              adenda_lote_monto: lote.monto
-            }
-            return loteObj
-          })
+            // si se agregan nuevos lotes
+            const csInsert = new pgp.helpers.ColumnSet(
+              [
+                'contrato_lote_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'adenda_nro',
+                'adenda_lote_monto'
+              ],
+              {
+                table: 'adenda_lote'
+              }
+            )
 
-          // generating a multi-row insert query:
-          const query = pgp.helpers.insert(values, cs)
-
-          // executing the query:
-          await pool.none(query)
-        }
-        resolve(resultado)
-      } catch (error) {
-        this.errors.push('Please try again later...')
-        console.log(error.message)
-        reject(this.errors)
-      }
-    } else {
-      reject(this.errors)
-    }
-  })
-}
-
-Adenda.prototype.updateContrato = async function () {
-  const {
-    licitacion_id,
-    activo,
-    cumplimiento,
-    nro,
-    tipo,
-    year,
-    moneda,
-    empresa,
-    fecha_firma,
-    fecha_vencimiento,
-    lotes,
-    monto_minimo,
-    monto_maximo
-  } = this.data
-  const eliminadosArray = this.data.eliminados ? this.data.eliminados : []
-  // only if there are no errors proceedo to save into the database
-  return new Promise(async (resolve, reject) => {
-    if (!this.errors.length) {
-      try {
-        let resultado = await pool.query(
-          `UPDATE contrato
-          SET contrato_firma='${fecha_firma}', contrato_vencimiento='${
-            cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
-          }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
-          WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}    `
-        )
-        if (lotes === false) {
-          await pool.query(
-            `UPDATE contrato_detalle
-            SET contrato_minimo=${monto_minimo}, contrato_maximo=${monto_maximo}
-            WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
-          )
-        }
-        if (Array.isArray(lotes)) {
-          const csUpdate = new pgp.helpers.ColumnSet(
-            ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
-            {
-              table: 'contrato_lote'
-            }
-          )
-
-          // si se agregan nuevos lotes al contrato se insertan
-          const csInsert = new pgp.helpers.ColumnSet(
-            [
-              'contrato_lote_id',
-              'contrato_nro',
-              'contrato_year',
-              'tipo_contrato_id',
-              'lote_descri',
-              'lote_minimo',
-              'lote_maximo'
-            ],
-            {
-              table: 'contrato_lote'
-            }
-          )
-
-          // data input values:
-          let loteObj
-          const values = lotes.map(lote => {
-            loteObj = {
-              contrato_nro: nro,
-              contrato_year: year,
-              tipo_contrato_id: tipo,
-              contrato_lote_id: lote.nro,
-              lote_descri: lote.nombre,
-              lote_minimo: lote.minimo,
-              lote_maximo: lote.maximo
-            }
-            lote.hasOwnProperty('newLote') ? (loteObj.newLote = true) : loteObj
-            return loteObj
-          })
-
-          const newLotes = values.filter(lote => lote.hasOwnProperty('newLote'))
-          const lotesActualizar = values.filter(
-            lote => !lote.hasOwnProperty('newLote')
-          )
-
-          const condition = pgp.as.format(
-            ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
-            loteObj
-          )
-
-          // si se agregaron lotes nuevos se insertan en la bd
-          if (newLotes.length > 0) {
-            // generating a multi-row insert query:
-            const queryInsert = pgp.helpers.insert(newLotes, csInsert)
-            // executing the query:
-            await pool.none(queryInsert)
-          }
-
-          // generating a multi-row insert query:
-          const queryUpdate =
-            pgp.helpers.update(lotesActualizar, csUpdate) + condition
-          // executing the query:
-          await pool.none(queryUpdate)
-
-          //si se eliminan lotes del contrato
-          if (eliminadosArray.length > 0) {
-            const ids = eliminadosArray.map(lote => {
-              return lote.nro
+            // data input values:
+            let loteObj
+            const values = lotes.map(lote => {
+              loteObj = {
+                contrato_nro: contrato_nro,
+                contrato_year: contrato_year,
+                tipo_contrato_id: tipo_contrato_id,
+                adenda_nro: nro,
+                contrato_lote_id: lote.lote_id,
+                adenda_lote_monto: lote.monto
+              }
+              lote.hasOwnProperty('newLote')
+                ? (loteObj.newLote = true)
+                : loteObj
+              return loteObj
             })
-            await pool.none(
-              `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} and contrato_lote_id in ($1:list)`,
-              [ids]
+
+            const newLotes = values.filter(lote =>
+              lote.hasOwnProperty('newLote')
             )
+            const lotesActualizar = values.filter(
+              lote => !lote.hasOwnProperty('newLote')
+            )
+
+            const condition = pgp.as.format(
+              ` WHERE t.adenda_nro=${nro} and t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id`,
+              loteObj
+            )
+
+            // si se agregaron lotes nuevos se insertan en la bd
+            if (newLotes.length > 0) {
+              // generating a multi-row insert query:
+              const queryInsert = pgp.helpers.insert(newLotes, csInsert)
+              // executing the query:
+              await t.none(queryInsert)
+            }
+
+            // generating a multi-row insert query:
+            if (lotesActualizar.length > 0) {
+              const queryUpdate =
+                pgp.helpers.update(lotesActualizar, csUpdate) + condition
+              // executing the query:
+              await t.none(queryUpdate)
+            }
+
+            //si se eliminan lotes del contrato
+            if (lotesEliminadosArray.length > 0) {
+              const ids = lotesEliminadosArray.map(lote => {
+                return lote.lote_id
+              })
+              await t.none(
+                `delete from adenda_lote where adenda_nro = ${nro} and contrato_nro = ${contrato_nro} and contrato_year = ${contrato_year} and tipo_contrato_id = ${tipo_contrato_id} and contrato_lote_id in ($1:list)`,
+                [ids]
+              )
+            }
           }
-        }
-        resolve(resultado)
+
+          let resultado = await t.query(
+            `UPDATE adenda
+            SET adenda_firma='${fecha_firma}', adenda_fecha=${
+              fecha_ampliada ? "'" + fecha_ampliada + "'" : null
+            }, adenda_observacion='${observaciones}' WHERE adenda_nro = ${nro} and  contrato_nro = ${contrato_nro} and contrato_year = ${contrato_year} and tipo_contrato_id = ${tipo_contrato_id} returning adenda_nro`
+          )
+
+          resolve(resultado)
+        })
       } catch (error) {
         this.errors.push('Please try again later...')
         console.log(error.message)
@@ -279,24 +382,26 @@ Adenda.prototype.updateContrato = async function () {
   })
 }
 
-Adenda.deleteContrato = function (nro, year, tipo) {
+Adenda.deleteAdenda = function ({ nroAdenda, nroContrato, year, tipo }) {
   return new Promise(async (resolve, reject) => {
     try {
-      let result = await pool.query(
-        `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-      )
-      if (!result.length) {
-        result = await pool.query(
-          `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+      pool.task(async t => {
+        await t.none(
+          `delete from adenda_disminucion where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo}`
         )
-      }
-      if (result.length) {
-        result = await pool.query(
-          `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+        await t.none(
+          `delete from adenda_lote where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo}`
         )
-      }
+        await t.none(
+          `delete from adenda_cc where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo}`
+        )
+        return await t.one(
+          `delete from adenda where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING adenda_nro`
+        )
+      })
       resolve()
     } catch (error) {
+      console.log(error)
       reject(error)
     }
   })
