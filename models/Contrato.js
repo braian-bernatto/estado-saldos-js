@@ -366,7 +366,7 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
 
       // adenda disminucion
       let disminucion = await pool.query(
-        `select * from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `select * from adenda natural join adenda_disminucion natural join adenda_disminucion_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} order by adenda_nro desc, rubro_id asc`
       )
 
       // adenda disminucion con lotes
@@ -376,7 +376,8 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
         NATURAL JOIN ADENDA_DISMINUCION ad
         NATURAL JOIN ADENDA a
         NATURAL JOIN CONTRATO c
-        NATURAL JOIN CONTRATO_LOTE cl WHERE c.licitacion_id = ${licitacionID} and c.contrato_nro = ${contratoNro}`
+        NATURAL JOIN CONTRATO_LOTE cl        
+        WHERE c.licitacion_id = ${licitacionID} and c.contrato_nro = ${contratoNro} order by ad.adenda_nro desc, al.contrato_lote_id asc`
       )
 
       disminucion.length ? '' : (disminucion = false)

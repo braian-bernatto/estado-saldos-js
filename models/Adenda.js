@@ -72,17 +72,23 @@ Adenda.prototype.addAdenda = async function () {
           )
           if (monto) {
             if (disminucion) {
+              await t.query(
+                `INSERT INTO adenda_disminucion(
+                  adenda_nro, contrato_nro, contrato_year, tipo_contrato_id, adenda_disminucion_monto)   
+                VALUES (${nro}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id}, ${monto})`
+              )
+
               const cs = new pgp.helpers.ColumnSet(
                 [
-                  'adenda_nro',
                   'rubro_id',
+                  'adenda_nro',
                   'contrato_nro',
                   'contrato_year',
                   'tipo_contrato_id',
-                  'adenda_disminucion_monto'
+                  'adenda_rubro_monto'
                 ],
                 {
-                  table: 'adenda_disminucion'
+                  table: 'adenda_disminucion_cc'
                 }
               )
 
@@ -94,7 +100,7 @@ Adenda.prototype.addAdenda = async function () {
                   contrato_year: contrato_year,
                   tipo_contrato_id: tipo_contrato_id,
                   rubro_id: rubro.nro,
-                  adenda_disminucion_monto: rubro.monto
+                  adenda_rubro_monto: rubro.monto
                 }
                 return rubroObj
               })
@@ -192,30 +198,35 @@ Adenda.prototype.updateAdenda = async function () {
       try {
         pool.task(async t => {
           if (disminucion) {
+            await t.any(
+              `UPDATE adenda_disminucion
+              SET adenda_disminucion_monto=${monto} WHERE adenda_nro = ${nro} and  contrato_nro = ${contrato_nro} and contrato_year = ${contrato_year} and tipo_contrato_id = ${tipo_contrato_id}`
+            )
+
             const csUpdate = new pgp.helpers.ColumnSet(
               [
                 'rubro_id',
                 'contrato_nro',
                 'contrato_year',
                 'tipo_contrato_id',
-                'adenda_disminucion_monto'
+                'adenda_rubro_monto'
               ],
               {
-                table: 'adenda_disminucion'
+                table: 'adenda_disminucion_cc'
               }
             )
             // si se agregan nuevos rubros
             const csInsert = new pgp.helpers.ColumnSet(
               [
-                'adenda_nro',
                 'rubro_id',
+                'adenda_nro',
                 'contrato_nro',
                 'contrato_year',
                 'tipo_contrato_id',
-                'adenda_disminucion_monto'
+                'adenda_rubro_monto'
               ],
               {
-                table: 'adenda_disminucion'
+                table: 'adenda_disminucion_cc'
               }
             )
 
@@ -228,7 +239,7 @@ Adenda.prototype.updateAdenda = async function () {
                 contrato_year: contrato_year,
                 tipo_contrato_id: tipo_contrato_id,
                 rubro_id: rubro.nro,
-                adenda_disminucion_monto: rubro.monto
+                adenda_rubro_monto: rubro.monto
               }
               rubro.hasOwnProperty('newRubro')
                 ? (rubroObj.newRubro = true)
@@ -270,7 +281,7 @@ Adenda.prototype.updateAdenda = async function () {
                 return rubro.nro
               })
               await t.none(
-                `delete from adenda_disminucion where adenda_nro=${nro} and contrato_nro=${contrato_nro} and contrato_year=${contrato_year} and tipo_contrato_id=${tipo_contrato_id} and rubro_id in ($1:list)`,
+                `delete from adenda_disminucion_cc where adenda_nro=${nro} and contrato_nro=${contrato_nro} and contrato_year=${contrato_year} and tipo_contrato_id=${tipo_contrato_id} and rubro_id in ($1:list)`,
                 [ids]
               )
             }
@@ -386,6 +397,9 @@ Adenda.deleteAdenda = function ({ nroAdenda, nroContrato, year, tipo }) {
   return new Promise(async (resolve, reject) => {
     try {
       pool.task(async t => {
+        await t.none(
+          `delete from adenda_disminucion_cc where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo}`
+        )
         await t.none(
           `delete from adenda_disminucion where adenda_nro = ${nroAdenda} and  contrato_nro = ${nroContrato} and contrato_year = ${year} and tipo_contrato_id = ${tipo}`
         )
