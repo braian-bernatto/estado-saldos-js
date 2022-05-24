@@ -143,12 +143,39 @@ Contrato.checkNroUtilizado = async function (nro, tipo, year) {
 Contrato.contratoByNro = async function (licitacionID, contratoNro) {
   return new Promise(async (resolve, reject) => {
     try {
-      let resultado =
-        await pool.query(`select * from licitacion natural join licitacion_tipo
-      natural join contrato natural join codigo_contratacion natural join
-      empresa where licitacion_id = ${licitacionID} and 
-      contrato_nro = ${contratoNro} and
-      codigo_contratacion_id not ilike '%AC%' order by contrato_nro`)
+      let resultado = await pool.query(`SELECT 
+        E.empresa_id,
+        L.licitacion_id,
+        L.licitacion_tipo_id,
+        L.licitacion_nro,
+        L.licitacion_year,
+        L.licitacion_descri,
+        LT.licitacion_tipo_abreviatura,
+        LT.licitacion_tipo_nombre,
+        C.contrato_nro,
+        C.contrato_year,
+        C.tipo_contrato_id,
+        C.contrato_firma,
+        C.contrato_vencimiento,
+        C.moneda_id,
+        CC.moneda_id AS MONEDA_CC,
+        C.contrato_activo,
+        E.empresa_ruc,
+        E.empresa_nombre_fantasia,
+        E.empresa_representante,
+        E.empresa_telef,
+        E.empresa_dir,
+        E.empresa_correo
+        FROM LICITACION L
+        NATURAL JOIN LICITACION_TIPO LT
+        NATURAL JOIN CONTRATO C 
+        LEFT JOIN CODIGO_CONTRATACION CC ON C.CONTRATO_NRO = CC.CONTRATO_NRO 
+        AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID 
+        NATURAL JOIN EMPRESA E
+        WHERE C.LICITACION_ID = ${licitacionID}
+                AND C.CONTRATO_NRO = ${contratoNro}
+                AND CC.CODIGO_CONTRATACION_ID not ilike '%AC%'
+        ORDER BY C.CONTRATO_NRO`)
 
       if (!resultado.length) {
         resultado =
@@ -344,16 +371,29 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
 Contrato.verAdenda = async function (licitacionID, contratoNro) {
   return new Promise(async (resolve, reject) => {
     try {
-      // monto total de la adenda
       let vigencia = await pool.query(
         `select * from adenda natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and adenda_fecha is not null and adenda_nro
         not in (select adenda_nro from codigo_contratacion natural join adenda natural join adenda_cc natural join contrato natural join codigo_rubro where licitacion_id =  ${licitacionID} and contrato_nro = ${contratoNro}) and adenda_nro not in (select distinct(adenda_nro) from adenda natural join adenda_disminucion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})`
       )
       vigencia.length ? '' : (vigencia = false)
 
-      // monto total de la adenda
       let ampliacion = await pool.query(
-        `select * from codigo_contratacion natural join adenda natural join adenda_cc natural join contrato natural join codigo_rubro where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        `SELECT CC.CODIGO_CONTRATACION_ID,
+        C.MONEDA_ID,
+        CC.MONEDA_ID AS MONEDA_CC,
+        A.ADENDA_NRO,
+        A.ADENDA_FIRMA,
+        A.ADENDA_FECHA,
+        A.ADENDA_OBSERVACION,
+        AC.ADENDA_MONTO,
+        CR.CODIGO_CONTRATACION_MONTO,
+        CR.RUBRO_ID
+      FROM CONTRATO C
+      NATURAL JOIN ADENDA A
+      NATURAL JOIN ADENDA_CC AC
+      LEFT JOIN CODIGO_CONTRATACION CC ON AC.CODIGO_CONTRATACION_ID = CC.CODIGO_CONTRATACION_ID
+      LEFT JOIN CODIGO_RUBRO CR ON CR.CODIGO_CONTRATACION_ID = CC.CODIGO_CONTRATACION_ID WHERE
+       C.licitacion_id = ${licitacionID} and C.contrato_nro = ${contratoNro} ORDER BY A.ADENDA_NRO DESC`
       )
 
       // adenda con lotes
