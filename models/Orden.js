@@ -84,4 +84,85 @@ Orden.ordenesEnlaces = async function () {
   })
 }
 
+Orden.prototype.addOrden = async function () {
+  const {
+    contrato_nro,
+    contrato_year,
+    tipo_contrato_id,
+    fecha_emision,
+    fecha_recepcion,
+    estado,
+    lotes,
+    monto,
+    nro,
+    year,
+    observacion,
+    rubro_id,
+    tipo
+  } = this.data
+
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        pool.task(async t => {
+          let resultado = await t.query(
+            `INSERT INTO orden(
+              orden_nro, orden_year, orden_tipo_id, orden_monto, orden_emision, orden_recepcion, orden_observacion, orden_estado, rubro_id, contrato_nro, contrato_year, tipo_contrato_id)
+            VALUES (${nro}, ${year}, ${tipo}, ${monto},'${fecha_emision}', ${
+              fecha_recepcion ? "'" + fecha_recepcion + "'" : null
+            }', '${observacion}', '${estado}', ${rubro_id}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id})`
+          )
+
+          if (Array.isArray(lotes)) {
+            const cs = new pgp.helpers.ColumnSet(
+              [
+                'orden_nro',
+                'orden_year',
+                'orden_tipo_id',
+                'contrato_nro',
+                'contrato_year',
+                'tipo_contrato_id',
+                'contrato_lote_id',
+                'orden_monto'
+              ],
+              {
+                table: 'orden_lote'
+              }
+            )
+
+            // data input values:
+            const values = lotes.map(lote => {
+              const loteObj = {
+                orden_nro: nro,
+                orden_nro: year,
+                orden_tipo_id: tipo,
+                contrato_nro: contrato_nro,
+                contrato_year: contrato_year,
+                tipo_contrato_id: tipo_contrato_id,
+                contrato_lote_id: lote.lote_id,
+                orden_monto: lote.monto
+              }
+              return loteObj
+            })
+
+            // generating a multi-row insert query:
+            const query = pgp.helpers.insert(values, cs)
+
+            // executing the query:
+            await t.none(query)
+          }
+          resolve(resultado)
+        })
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
 module.exports = Orden
