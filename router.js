@@ -348,6 +348,87 @@ apiRouter.get(
   '/licitaciones/ordenes/enlaces',
   ordenController.apiGetOrdenesEnlaces
 )
+apiRouter.post(
+  '/licitaciones/:id/contratos/:nro/ordenes',
+  auth,
+  [
+    check('nro')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de orden debe ser un string')
+      .toUpperCase(),
+    check('year', 'El año de la orden es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año debe ser numérico')
+      .toInt(),
+    check('tipo', 'El tipo de orden es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El tipo de orden debe ser numérico')
+      .toInt(),
+    check('observacion')
+      .isString()
+      .withMessage('La descripción debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('contrato_nro', 'El nro de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El nro de contrato debe ser numérico')
+      .toInt(),
+    check('contrato_year', 'El año del contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año del contrato debe ser numérico')
+      .toInt(),
+    check('tipo_contrato_id', 'El tipo de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El tipo de contrato debe ser numérico')
+      .toInt(),
+    check('rubro_id', 'El rubro es obligatorio')
+      .not()
+      .isEmpty()
+      .withMessage('El rubro es obligatorio')
+      .isNumeric()
+      .withMessage('El rubro debe ser numérico')
+      .toInt(),
+    check('fecha_emision')
+      .isDate()
+      .withMessage('La fecha de emisión es inválida'),
+    check('fecha_recepcion')
+      .isDate()
+      .withMessage('La fecha de recepción es inválida')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('monto')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat(),
+    check('estado')
+      .isString()
+      .withMessage('El estado debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.lote_id')
+      .isNumeric()
+      .withMessage('El número de lote debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('lotes.*.monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  ordenController.apiAddOrden
+)
 
 // facturas routes
 apiRouter.get(

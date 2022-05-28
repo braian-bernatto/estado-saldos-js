@@ -30,3 +30,17 @@ exports.apiGetOrdenesEnlaces = async function (req, res) {
     res.status(500).send(error)
   }
 }
+
+exports.apiAddOrden = async function (req, res) {
+  // revisar si hay errores
+  const errores = validationResult(req)
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() })
+  }
+  try {
+    let orden = await new Orden(req.body).addOrden()
+    res.json(orden)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
