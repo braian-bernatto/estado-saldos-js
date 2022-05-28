@@ -1,4 +1,5 @@
 const Orden = require('../models/Orden')
+const { validationResult } = require('express-validator')
 
 exports.apiGetOrdenes = async function (req, res) {
   try {
@@ -40,6 +41,29 @@ exports.apiAddOrden = async function (req, res) {
   try {
     let orden = await new Orden(req.body).addOrden()
     res.json(orden)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiUpdateOrden = async function (req, res) {
+  // revisar si hay errores
+  const errores = validationResult(req)
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() })
+  }
+  try {
+    let orden = await new Orden(req.body).updateOrden()
+    res.json(orden)
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+}
+
+exports.apiDeleteOrden = async function (req, res) {
+  try {
+    let respuesta = await Orden.deleteOrden(req.params)
+    res.json(respuesta)
   } catch (error) {
     res.status(500).send('Error')
   }
