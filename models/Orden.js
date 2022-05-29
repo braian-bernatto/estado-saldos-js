@@ -40,7 +40,7 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
         })
 
         // ordenar por numero de orden
-        const resutlatoOrdenado = resultadoAgrupado.map(listado =>
+        const resultadoOrdenado = resultadoAgrupado.map(listado =>
           listado
             .sort((a, b) =>
               a.orden_nro.localeCompare(b.orden_nro, 'en', { numeric: true })
@@ -48,7 +48,18 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
             .reverse()
         )
 
-        resolve(resutlatoOrdenado)
+        // monto total emitido en ordenes
+        let totalOrdenes = await pool.query(
+          `select sum(orden_monto) as orden_emitido from orden natural join orden_tipo natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+        )
+
+        let orden = new Orden(resultadoOrdenado, totalOrdenes)
+
+        totalOrdenes.length ? '' : (totalOrdenes = 0)
+
+        orden.totalEmitido = totalOrdenes[0].orden_emitido
+
+        resolve(orden)
       } else {
         reject()
       }
@@ -62,7 +73,7 @@ Orden.checkOrdenUtilizado = async function (nro, tipo, year) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from orden where orden_nro ilike '%${nro}%' and orden_tipo_id = ${tipo} and orden_year = ${year}`
+        `select * from orden where orden_nro ilike '${nro}' and orden_tipo_id = ${tipo} and orden_year = ${year}`
       )
       resultado.length ? resolve(false) : resolve(true)
     } catch (error) {
