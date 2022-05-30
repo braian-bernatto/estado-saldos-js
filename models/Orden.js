@@ -53,7 +53,7 @@ Orden.ordenesByContrato = async function (licitacionID, contratoNro) {
           `select sum(orden_monto) as orden_emitido from orden natural join orden_tipo natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
         )
 
-        let orden = new Orden(resultadoOrdenado, totalOrdenes)
+        let orden = new Orden(resultadoOrdenado)
 
         totalOrdenes.length ? '' : (totalOrdenes = 0)
 

@@ -522,6 +522,110 @@ apiRouter.get(
   auth,
   facturaController.apiGetFacturas
 )
+apiRouter.get(
+  '/factura/:nro/:timbrado',
+  auth,
+  facturaController.apiCheckFacturaNro
+)
+apiRouter.post(
+  '/licitaciones/:id/contratos/:nro/facturas',
+  auth,
+  [
+    check('nro')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de orden debe ser un string')
+      .toUpperCase(),
+    check('timbrado', 'El timbrado es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('contrato_nro', 'El nro de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El nro de contrato debe ser numérico')
+      .toInt(),
+    check('contrato_year', 'El año del contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año del contrato debe ser numérico')
+      .toInt(),
+    check('tipo_contrato_id', 'El tipo de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El tipo de contrato debe ser numérico')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('vencimientoTimbrado')
+      .isDate()
+      .withMessage('La fecha de vencimiento de timbrado es inválida'),
+    check('monto')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  facturaController.apiAddFactura
+)
+apiRouter.put(
+  '/facturas/:nro/:timbrado',
+  auth,
+  [
+    check('nro')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de orden debe ser un string')
+      .toUpperCase(),
+    check('timbrado', 'El timbrado es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('contrato_nro', 'El nro de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El nro de contrato debe ser numérico')
+      .toInt(),
+    check('contrato_year', 'El año del contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año del contrato debe ser numérico')
+      .toInt(),
+    check('tipo_contrato_id', 'El tipo de contrato es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El tipo de contrato debe ser numérico')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('vencimientoTimbrado')
+      .isDate()
+      .withMessage('La fecha de vencimiento de timbrado es inválida'),
+    check('monto')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  facturaController.apiUpdateFactura
+)
+apiRouter.delete(
+  '/facturas/:nro/:timbrado',
+  auth,
+  facturaController.apiDeleteFactura
+)
 
 // notas credito routes
 apiRouter.get(

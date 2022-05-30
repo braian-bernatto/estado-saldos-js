@@ -2,6 +2,7 @@ const pool = require('../db')
 
 const Factura = function (data) {
   this.data = data
+  this.errors = []
 }
 
 Factura.allFacturasByContrato = async function (licitacionID, contratoNro) {
@@ -31,12 +32,105 @@ Factura.allFacturasByContrato = async function (licitacionID, contratoNro) {
           })
           resultadoAgrupado.push(listado)
         })
-        resolve(resultadoAgrupado)
+
+        // monto total facturado
+        let totalFacturado = await pool.query(
+          `select sum(factura_monto) - (select coalesce(total_nota_credito, 0) as total_nota_credito from (select sum(nota_monto) as total_nota_credito from nota_credito natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as total_nota_credito) as total_factura from factura natural join licitacion natural join contrato where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}`
+        )
+
+        let facturas = new Factura(resultadoAgrupado)
+
+        totalFacturado.length ? '' : (totalFacturado = 0)
+
+        facturas.totalFacturado = totalFacturado[0].total_factura
+
+        resolve(facturas)
       } else {
         reject()
       }
     } catch (error) {
       console.log(error)
+    }
+  })
+}
+
+Factura.checkNroUtilizado = async function ({ nro, timbrado }) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `select * from factura where factura_nro ilike '${nro}' and factura_timbrado = ${timbrado}`
+      )
+      resultado.length ? resolve(false) : resolve(true)
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
+Factura.prototype.addFactura = async function () {
+  const {
+    contrato_nro,
+    contrato_year,
+    tipo_contrato_id,
+    fecha,
+    timbrado,
+    vencimientoTimbrado,
+    monto,
+    nro
+  } = this.data
+
+  // only if there are no errors proceedo to save into the database
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `INSERT INTO factura(
+              factura_nro, factura_timbrado, factura_fecha, factura_monto, contrato_nro, contrato_year, tipo_contrato_id, factura_timbrado_vencimiento)
+            VALUES ('${nro}', ${timbrado}, '${fecha}', ${monto}, ${contrato_nro}, ${contrato_year}, ${tipo_contrato_id},'${vencimientoTimbrado}')`
+        )
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Factura.prototype.updateFactura = async function () {
+  const { fecha, timbrado, vencimientoTimbrado, monto, nro } = this.data
+  return new Promise(async (resolve, reject) => {
+    if (!this.errors.length) {
+      try {
+        let resultado = await pool.query(
+          `UPDATE factura
+            SET factura_fecha='${fecha}', factura_monto=${monto}, factura_timbrado_vencimiento='${vencimientoTimbrado}'
+          WHERE factura_nro ilike '${nro}' and factura_timbrado = ${timbrado}`
+        )
+        resolve(resultado)
+      } catch (error) {
+        this.errors.push('Please try again later...')
+        console.log(error.message)
+        reject(this.errors)
+      }
+    } else {
+      reject(this.errors)
+    }
+  })
+}
+
+Factura.deleteFactura = function ({ nro, timbrado }) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await pool.query(
+        `delete from factura where factura_nro ilike '${nro}' and factura_timbrado = ${timbrado}`
+      )
+      resolve()
+    } catch (error) {
+      reject(error)
     }
   })
 }
