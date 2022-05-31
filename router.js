@@ -679,6 +679,50 @@ apiRouter.post(
   ],
   strController.apiAddStr
 )
+apiRouter.put(
+  '/str/:nro/:year',
+  auth,
+  [
+    check('nro', 'El N° de STR es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El N° de STR debe ser numérico')
+      .toInt(),
+    check('year', 'El año de la STR es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año debe ser numérico')
+      .toInt(),
+    check('moneda', 'La moneda es obligatoria')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('La moneda debe ser numérica')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('fechaDeposito')
+      .isDate()
+      .withMessage('La fecha de depósito es inválida')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.facturaNro')
+      .isString()
+      .withMessage('El N° de factura debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.timbrado')
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  strController.apiUpdateStr
+)
 apiRouter.delete('/str/:nro/:year', auth, strController.apiDeleteStr)
 
 // notas credito routes

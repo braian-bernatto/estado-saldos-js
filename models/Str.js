@@ -49,7 +49,6 @@ Str.prototype.addStr = async function () {
 
             // data input values:
             const values = facturas.map(factura => {
-              console.log(factura)
               const facturaObj = {
                 factura_nro: factura.facturaNro,
                 factura_timbrado: factura.timbrado,
@@ -79,22 +78,8 @@ Str.prototype.addStr = async function () {
   })
 }
 
-Str.prototype.updateContrato = async function () {
-  const {
-    licitacion_id,
-    activo,
-    cumplimiento,
-    nro,
-    tipo,
-    year,
-    moneda,
-    empresa,
-    fecha_firma,
-    fecha_vencimiento,
-    lotes,
-    monto_minimo,
-    monto_maximo
-  } = this.data
+Str.prototype.updateStr = async function () {
+  const { nro, year, fecha, fechaDeposito, moneda, facturas } = this.data
   const eliminadosArray = this.data.eliminados ? this.data.eliminados : []
   // only if there are no errors proceedo to save into the database
   return new Promise(async (resolve, reject) => {
@@ -102,99 +87,88 @@ Str.prototype.updateContrato = async function () {
       try {
         pool.task(async t => {
           let resultado = await t.query(
-            `UPDATE contrato
-          SET contrato_firma='${fecha_firma}', contrato_vencimiento='${
-              cumplimiento ? 'CUMPLIMIENTO' : fecha_vencimiento
-            }', licitacion_id=${licitacion_id}, empresa_id=${empresa}, moneda_id=${moneda}, contrato_activo=${activo}, tipo_contrato_id=${tipo}
-          WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
+            `UPDATE str SET str_fecha='${fecha}', str_fecha_deposito=${
+              fechaDeposito ? "'" + fechaDeposito + "'" : null
+            }, moneda_id=${moneda} WHERE str_nro=${nro} and str_year=${year}`
           )
-          if (lotes === false) {
-            await t.query(
-              `UPDATE contrato_detalle
-            SET contrato_minimo=${
-              monto_minimo ? monto_minimo : null
-            }, contrato_maximo=${monto_maximo}
-            WHERE contrato_nro=${nro} and contrato_year=${year} and tipo_contrato_id=${tipo}`
-            )
-          }
-          if (Array.isArray(lotes)) {
-            const csUpdate = new pgp.helpers.ColumnSet(
-              ['contrato_lote_id', 'lote_descri', 'lote_minimo', 'lote_maximo'],
-              {
-                table: 'contrato_lote'
-              }
-            )
+          if (Array.isArray(facturas)) {
+            const csUpdate = new pgp.helpers.ColumnSet(['str_monto'], {
+              table: 'str_detalle'
+            })
 
             // si se agregan nuevos lotes al contrato se insertan
             const csInsert = new pgp.helpers.ColumnSet(
               [
-                'contrato_lote_id',
-                'contrato_nro',
-                'contrato_year',
-                'tipo_contrato_id',
-                'lote_descri',
-                'lote_minimo',
-                'lote_maximo'
+                'factura_nro',
+                'factura_timbrado',
+                'str_monto',
+                'str_nro',
+                'str_year'
               ],
               {
-                table: 'contrato_lote'
+                table: 'str_detalle'
               }
             )
 
             // data input values:
             let facturaObj
-            const values = lotes.map(lote => {
+            const values = facturas.map(factura => {
               facturaObj = {
-                contrato_nro: nro,
-                contrato_year: year,
-                tipo_contrato_id: tipo,
-                contrato_lote_id: lote.nro,
-                lote_descri: lote.nombre,
-                lote_minimo: lote.minimo,
-                lote_maximo: lote.maximo
+                factura_nro: factura.facturaNro,
+                factura_timbrado: factura.timbrado,
+                str_monto: parseFloat(factura.monto),
+                str_nro: nro,
+                str_year: year
               }
-              lote.hasOwnProperty('newLote')
-                ? (facturaObj.newLote = true)
+              factura.hasOwnProperty('newFactura')
+                ? (facturaObj.newFactura = true)
                 : facturaObj
               return facturaObj
             })
 
-            const newLotes = values.filter(lote =>
-              lote.hasOwnProperty('newLote')
+            const newFacturas = values.filter(factura =>
+              factura.hasOwnProperty('newFactura')
             )
-            const lotesActualizar = values.filter(
-              lote => !lote.hasOwnProperty('newLote')
+            const facturasActualizar = values.filter(
+              factura => !factura.hasOwnProperty('newFactura')
             )
 
             const condition = pgp.as.format(
-              ' WHERE t.contrato_nro=${contrato_nro} and t.contrato_year=${contrato_year} and t.tipo_contrato_id=${tipo_contrato_id} and t.contrato_lote_id=v.contrato_lote_id',
+              ' WHERE t.str_nro=${str_nro} and t.str_year=${str_year} and t.factura_nro=${factura_nro} and t.factura_timbrado=${factura_timbrado}',
               facturaObj
             )
 
-            // si se agregaron lotes nuevos se insertan en la bd
-            if (newLotes.length > 0) {
+            // si se agregaron facturas nuevas se insertan en la bd
+            if (newFacturas.length > 0) {
               // generating a multi-row insert query:
-              const queryInsert = pgp.helpers.insert(newLotes, csInsert)
+              const queryInsert = pgp.helpers.insert(newFacturas, csInsert)
               // executing the query:
               await t.none(queryInsert)
             }
 
             // generating a multi-row insert query:
-            if (lotesActualizar.length > 0) {
+            if (facturasActualizar.length > 0) {
               const queryUpdate =
-                pgp.helpers.update(lotesActualizar, csUpdate) + condition
+                pgp.helpers.update(facturasActualizar, csUpdate) + condition
               // executing the query:
               await t.none(queryUpdate)
             }
 
-            //si se eliminan lotes del contrato
+            //si se eliminan facturas
             if (eliminadosArray.length > 0) {
-              const ids = eliminadosArray.map(lote => {
-                return lote.nro
+              const ids = eliminadosArray.map(factura => {
+                return {
+                  factura_nro: factura.facturaNro,
+                  factura_timbrado: factura.timbrado
+                }
               })
+              const values = pgp.helpers.values(ids, [
+                'factura_nro',
+                'factura_timbrado'
+              ])
               await t.none(
-                `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} and contrato_lote_id in ($1:list)`,
-                [ids]
+                `delete from str_detalle where str_nro = ${nro} and str_year = ${year} and (factura_nro, factura_timbrado) in ($1:raw)`,
+                [values]
               )
             }
           }
