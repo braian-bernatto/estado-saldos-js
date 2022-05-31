@@ -4,6 +4,7 @@ const licitacionController = require('./controllers/licitacionController')
 const contratoController = require('./controllers/contratoController')
 const ordenController = require('./controllers/ordenController')
 const facturaController = require('./controllers/facturaController')
+const strController = require('./controllers/strController')
 const notaCreditoController = require('./controllers/notaCreditoController')
 const empresaController = require('./controllers/empresaController')
 const nivelController = require('./controllers/nivelController')
@@ -527,6 +528,11 @@ apiRouter.get(
   auth,
   facturaController.apiCheckFacturaNro
 )
+apiRouter.get(
+  '/factura/:nro/:timbrado/saldo',
+  auth,
+  facturaController.apiCheckFacturaSaldo
+)
 apiRouter.post(
   '/licitaciones/:id/contratos/:nro/facturas',
   auth,
@@ -626,6 +632,54 @@ apiRouter.delete(
   auth,
   facturaController.apiDeleteFactura
 )
+
+//str routes
+apiRouter.get('/str/:nro/:year', auth, strController.apiCheckStrNro)
+apiRouter.post(
+  '/str',
+  auth,
+  [
+    check('nro', 'El N° de STR es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El N° de STR debe ser numérico')
+      .toInt(),
+    check('year', 'El año de la STR es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El año debe ser numérico')
+      .toInt(),
+    check('moneda', 'La moneda es obligatoria')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('La moneda debe ser numérica')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('fechaDeposito')
+      .isDate()
+      .withMessage('La fecha de depósito es inválida')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.facturaNro')
+      .isString()
+      .withMessage('El N° de factura debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.timbrado')
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt()
+      .optional({ nullable: true, checkFalsy: true }),
+    check('facturas.*.monto')
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  strController.apiAddStr
+)
+apiRouter.delete('/str/:nro/:year', auth, strController.apiDeleteStr)
 
 // notas credito routes
 apiRouter.get(

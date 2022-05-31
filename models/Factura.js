@@ -9,7 +9,11 @@ Factura.allFacturasByContrato = async function (licitacionID, contratoNro) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select f.factura_nro, f.factura_fecha, f.factura_monto, f.factura_timbrado, f.factura_timbrado_vencimiento, s.str_nro, s.str_year, s.str_fecha, s.str_fecha_deposito,sd.str_monto, m.moneda_id, m.moneda_descri, m.moneda_simbolo from factura f left join str_detalle sd natural join str s natural join moneda m on f.factura_nro = sd.factura_nro and f.factura_timbrado = sd.factura_timbrado inner join contrato con on f.contrato_nro = con.contrato_nro and f.contrato_year = con.contrato_year and f.tipo_contrato_id = con.tipo_contrato_id where con.licitacion_id = ${licitacionID} and con.contrato_nro = ${contratoNro} order by factura_fecha desc, factura_nro desc, str_year desc, str_nro desc`
+        `select f.factura_nro, f.factura_fecha, f.factura_monto, (SELECT FACTURA.FACTURA_MONTO - SUM(STR_MONTO) AS RESTANTE_FACTURA
+        FROM FACTURA
+        NATURAL JOIN STR_DETALLE
+        WHERE FACTURA_NRO = F.FACTURA_NRO AND FACTURA_TIMBRADO = 
+	 F.FACTURA_TIMBRADO GROUP BY FACTURA.FACTURA_MONTO) AS FACTURA_SALDO,f.factura_timbrado, f.factura_timbrado_vencimiento, s.str_nro, s.str_year, s.str_fecha, s.str_fecha_deposito,sd.str_monto, m.moneda_id, m.moneda_descri, m.moneda_simbolo from factura f left join str_detalle sd natural join str s natural join moneda m on f.factura_nro = sd.factura_nro and f.factura_timbrado = sd.factura_timbrado inner join contrato con on f.contrato_nro = con.contrato_nro and f.contrato_year = con.contrato_year and f.tipo_contrato_id = con.tipo_contrato_id where con.licitacion_id = ${licitacionID} and con.contrato_nro = ${contratoNro} order by factura_fecha desc, factura_nro desc, str_year desc, str_nro desc`
       )
 
       if (resultado.length) {
@@ -61,6 +65,22 @@ Factura.checkNroUtilizado = async function ({ nro, timbrado }) {
         `select * from factura where factura_nro ilike '${nro}' and factura_timbrado = ${timbrado}`
       )
       resultado.length ? resolve(false) : resolve(true)
+    } catch (error) {
+      console.log(error)
+    }
+  })
+}
+
+Factura.checkFacturaSaldo = async function ({ nro, timbrado }) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resultado = await pool.query(
+        `SELECT FACTURA.FACTURA_MONTO - SUM(STR_MONTO) AS RESTANTE_FACTURA
+        FROM FACTURA
+        NATURAL JOIN STR_DETALLE
+        WHERE FACTURA_NRO = '${nro}' AND FACTURA_TIMBRADO = ${timbrado} GROUP BY FACTURA.FACTURA_MONTO`
+      )
+      resolve(resultado)
     } catch (error) {
       console.log(error)
     }

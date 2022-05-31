@@ -22,6 +22,15 @@ exports.apiCheckFacturaNro = async function (req, res) {
   }
 }
 
+exports.apiCheckFacturaSaldo = async function (req, res) {
+  try {
+    let respuesta = await Factura.checkFacturaSaldo(req.params)
+    res.json(respuesta)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+}
+
 exports.apiAddFactura = async function (req, res) {
   // revisar si hay errores
   const errores = validationResult(req)
