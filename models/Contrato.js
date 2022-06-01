@@ -158,6 +158,8 @@ Contrato.contratoByNro = async function (licitacionID, contratoNro) {
         C.contrato_firma,
         C.contrato_vencimiento,
         C.moneda_id,
+        M.moneda_descri,
+        M.moneda_simbolo,
         CC.moneda_id AS MONEDA_CC,
         C.contrato_activo,
         E.empresa_ruc,
@@ -169,6 +171,7 @@ Contrato.contratoByNro = async function (licitacionID, contratoNro) {
         FROM LICITACION L
         NATURAL JOIN LICITACION_TIPO LT
         NATURAL JOIN CONTRATO C 
+        NATURAL JOIN MONEDA M 
         LEFT JOIN CODIGO_CONTRATACION CC ON C.CONTRATO_NRO = CC.CONTRATO_NRO 
         AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID 
         NATURAL JOIN EMPRESA E
@@ -300,22 +303,22 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
 
       // adjudicacion por lote
       if (!resultado.length) {
-        resultado =
-          await pool.query(`select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda
-      where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%' order by contrato_lote_id`)
+        resultado = await pool.query(
+          `select * from contrato natural join contrato_lote natural join codigo_contratacion natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} and codigo_contratacion_id not ilike '%AC%' order by contrato_lote_id`
+        )
       }
 
       // adjudicacion normal
       if (!resultado.length) {
         resultado = await pool.query(
-          `select * from contrato natural join contrato_detalle where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+          `select * from contrato natural join contrato_detalle natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
         )
       }
 
       // adjudicacion por lote
       if (!resultado.length) {
         resultado = await pool.query(
-          `select * from contrato natural join contrato_lote where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
+          `select * from contrato natural join contrato_lote natural join moneda where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
         )
       }
 
