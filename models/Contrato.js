@@ -379,7 +379,7 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
       )
       vigencia.length ? '' : (vigencia = false)
 
-      let ampliacion = await pool.query(
+      let ampliacionAll = await pool.query(
         `SELECT CC.CODIGO_CONTRATACION_ID,
         C.MONEDA_ID,
         CC.MONEDA_ID AS MONEDA_CC,
@@ -397,6 +397,55 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
       LEFT JOIN CODIGO_RUBRO CR ON CR.CODIGO_CONTRATACION_ID = CC.CODIGO_CONTRATACION_ID WHERE
        C.licitacion_id = ${licitacionID} and C.contrato_nro = ${contratoNro} ORDER BY A.ADENDA_NRO DESC`
       )
+      let ampliacion = ampliacionAll.reduce((acumulador, valorActual) => {
+        const elementoYaExiste = acumulador.find(
+          elemento =>
+            elemento.codigo_contratacion_id ===
+            valorActual.codigo_contratacion_id
+        )
+        let nuevo
+        if (elementoYaExiste) {
+          nuevo = acumulador.map(item => {
+            if (
+              item.codigo_contratacion_id === valorActual.codigo_contratacion_id
+            ) {
+              item.rubros
+                ? (item.rubros = [
+                    ...item.rubros,
+                    {
+                      rubro_id: valorActual.rubro_id,
+                      monto: valorActual.codigo_contratacion_monto
+                    }
+                  ])
+                : (item.rubros = [
+                    {
+                      rubro_id: valorActual.rubro_id,
+                      monto: valorActual.codigo_contratacion_monto
+                    }
+                  ])
+              item.codigo_contratacion_monto =
+                parseFloat(item.codigo_contratacion_monto) +
+                parseFloat(valorActual.codigo_contratacion_monto)
+              delete item.rubro_id
+            }
+            return item
+          })
+          return nuevo
+        } else {
+          return [
+            ...acumulador,
+            {
+              ...valorActual,
+              rubros: [
+                {
+                  rubro_id: valorActual.rubro_id,
+                  monto: valorActual.codigo_contratacion_monto
+                }
+              ]
+            }
+          ]
+        }
+      }, [])
 
       // adenda con lotes
       let lotes_ampliacion = await pool.query(
@@ -407,9 +456,55 @@ Contrato.verAdenda = async function (licitacionID, contratoNro) {
       lotes_ampliacion.length ? '' : (lotes_ampliacion = false)
 
       // adenda disminucion
-      let disminucion = await pool.query(
+      let disminucionAll = await pool.query(
         `select * from adenda natural join adenda_disminucion natural join adenda_disminucion_cc natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} order by adenda_nro desc, rubro_id asc`
       )
+
+      let disminucion = disminucionAll.reduce((acumulador, valorActual) => {
+        const elementoYaExiste = acumulador.find(
+          elemento => elemento.adenda_nro === valorActual.adenda_nro
+        )
+        let nuevo
+        if (elementoYaExiste) {
+          nuevo = acumulador.map(item => {
+            if (item.adenda_nro === valorActual.adenda_nro) {
+              item.rubros
+                ? (item.rubros = [
+                    ...item.rubros,
+                    {
+                      rubro_id: valorActual.rubro_id,
+                      monto: valorActual.adenda_rubro_monto
+                    }
+                  ])
+                : (item.rubros = [
+                    {
+                      rubro_id: valorActual.rubro_id,
+                      monto: valorActual.adenda_rubro_monto
+                    }
+                  ])
+              item.adenda_rubro_monto =
+                parseFloat(item.adenda_rubro_monto) +
+                parseFloat(valorActual.adenda_rubro_monto)
+              delete item.rubro_id
+            }
+            return item
+          })
+          return nuevo
+        } else {
+          return [
+            ...acumulador,
+            {
+              ...valorActual,
+              rubros: [
+                {
+                  rubro_id: valorActual.rubro_id,
+                  monto: valorActual.adenda_rubro_monto
+                }
+              ]
+            }
+          ]
+        }
+      }, [])
 
       // adenda disminucion con lotes
       let lotes_disminucion = await pool.query(
