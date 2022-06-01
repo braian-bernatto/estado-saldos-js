@@ -727,9 +727,101 @@ apiRouter.delete('/str/:nro/:year', auth, strController.apiDeleteStr)
 
 // notas credito routes
 apiRouter.get(
-  '/licitaciones/:id/contratos/:nro/nota-credito',
+  '/licitaciones/:id/contratos/:nro/notaCredito',
   auth,
   notaCreditoController.apiGetNotasCredito
+)
+apiRouter.get(
+  '/notaCredito/:nro/:timbrado',
+  auth,
+  notaCreditoController.apiCheckNotaCreditoNro
+)
+apiRouter.post(
+  '/factura/:nro/:timbrado/notaCredito',
+  auth,
+  [
+    check('nro')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de factura debe ser un string')
+      .toUpperCase(),
+    check('timbrado', 'El timbrado es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('nroFactura')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de factura debe ser un string')
+      .toUpperCase(),
+    check('timbradoFactura', 'El timbrado de factura es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('vencimientoTimbrado')
+      .isDate()
+      .withMessage('La fecha de vencimiento de timbrado es inválida'),
+    check('monto')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  notaCreditoController.apiAddNotaCredito
+)
+apiRouter.put(
+  '/factura/:nro/:timbrado/notaCredito/:nroNotaCredito/:timbradoNotaCredito',
+  auth,
+  [
+    check('nro')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de factura debe ser un string')
+      .toUpperCase(),
+    check('timbrado', 'El timbrado es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('nroFactura')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nro de factura debe ser un string')
+      .toUpperCase(),
+    check('timbradoFactura', 'El timbrado de factura es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El timbrado debe ser numérico')
+      .toInt(),
+    check('fecha').isDate().withMessage('La fecha de emisión es inválida'),
+    check('vencimientoTimbrado')
+      .isDate()
+      .withMessage('La fecha de vencimiento de timbrado es inválida'),
+    check('monto')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El monto debe ser numérico')
+      .toFloat()
+  ],
+  notaCreditoController.apiUpdateNotaCredito
+)
+apiRouter.delete(
+  '/notaCredito/:nro/:timbrado',
+  auth,
+  notaCreditoController.apiDeleteNotaCredito
 )
 
 // empresa routes

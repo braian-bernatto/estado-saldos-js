@@ -108,7 +108,6 @@ Factura.checkFacturaSaldo = async function ({ nro, timbrado }) {
     }
   })
 }
-
 Factura.prototype.addFactura = async function () {
   const {
     contrato_nro,
