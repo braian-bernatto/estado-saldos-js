@@ -95,8 +95,8 @@ NotaCredito.prototype.updateNotaCredito = async function () {
     if (!this.errors.length) {
       try {
         let resultado = await pool.query(
-          `UPDATE nota_credito
-           nota_fecha='${fecha}', nota_monto=${monto}, nota_timbrado_vencimiento='${vencimientoTimbrado}'
+          `UPDATE nota_credito 
+          SET nota_fecha='${fecha}', nota_monto=${monto}, nota_timbrado_vencimiento='${vencimientoTimbrado}'
           WHERE nota_nro = '${nro}' and nota_timbrado = ${timbrado}`
         )
         resolve(resultado)

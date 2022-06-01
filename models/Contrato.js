@@ -334,19 +334,21 @@ Contrato.contratoResumen = async function (licitacionID, contratoNro) {
       totalFacturado.length ? '' : (totalFacturado = 0)
 
       // monto facturado con str
-      let totalFacturadoSTR = await pool.query(
-        `select sum(str_monto * factura_menos_credito / suma_str) as total_factura_str from (
-          select factura_nro, factura_monto, str_monto, suma_str, factura_monto - coalesce(total_nota_credito, 0) as factura_menos_credito from (
-          select factura_nro, total_nota_credito from factura left join (select factura_nro, sum(nota_monto) as total_nota_credito from nota_credito natural join factura natural join contrato
-          where licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro} group by factura_nro) as credito using(factura_nro) natural join contrato where
-          licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as credito natural join (select factura_nro, factura_monto, str_monto, suma_str from str_detalle natural join
-          factura natural join contrato natural join (select factura_nro, factura_monto, sum(str_monto)
-          as suma_str from str_detalle natural join factura natural join
-          contrato where licitacion_id = ${licitacionID} and contrato_nro =
-          ${contratoNro} group by factura_nro, factura_monto) as suma where
-          licitacion_id = ${licitacionID} and contrato_nro =  ${contratoNro}) as listado) as superquery
-          `
+      let checkEqualMoneda = await pool.query(
+        `select str.moneda_id, contrato.moneda_id from contrato 
+          natural join str natural join licitacion where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}`
       )
+
+      let finalQuery = checkEqualMoneda.length
+        ? `select coalesce((select sum(str_monto) as total_factura_str from str_detalle where factura_nro in (select factura_nro from factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro})), 0) as total_factura_str
+    `
+        : `select coalesce((select sum(str_monto * factura_menos_credito / suma_str) as total_factura_str from (
+        select factura_nro, factura_monto, str_monto, suma_str, factura_monto - coalesce(total_nota_credito, 0) as factura_menos_credito from (
+        select factura_nro, total_nota_credito from factura left join (select factura_nro, sum(nota_monto) as total_nota_credito from nota_credito natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} group by factura_nro) as credito using(factura_nro) natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}) as credito natural join (select factura_nro, factura_monto, str_monto, suma_str from str_detalle natural join factura natural join contrato natural join (select factura_nro, factura_monto, sum(str_monto) as suma_str from str_detalle natural join factura natural join contrato where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro} group by factura_nro, factura_monto) as suma where licitacion_id = ${licitacionID} and contrato_nro = ${contratoNro}) as listado) as superquery), 0) as total_factura_str
+    `
+
+      // monto facturado con str en moneda extranjera
+      let totalFacturadoSTR = await pool.query(finalQuery)
 
       totalFacturadoSTR.length ? '' : (totalFacturadoSTR = 0)
 
