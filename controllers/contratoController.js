@@ -125,7 +125,8 @@ exports.apiDeleteContrato = async function (req, res) {
     )
     res.json(respuesta)
   } catch (error) {
-    res.status(500).send('Error')
+    console.log(error)
+    res.status(500).send(error.detail)
   }
 }
 

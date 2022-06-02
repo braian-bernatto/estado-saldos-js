@@ -592,7 +592,9 @@ Contrato.prototype.addContrato = async function () {
             await t.query(
               `INSERT INTO contrato_detalle(
               contrato_nro, contrato_year, tipo_contrato_id, contrato_minimo, contrato_maximo)
-              VALUES (${nro}, ${year}, ${tipo}, ${monto_minimo}, ${monto_maximo})`
+              VALUES (${nro}, ${year}, ${tipo}, ${
+                monto_minimo ? monto_minimo : null
+              }, ${monto_maximo})`
             )
           }
           if (Array.isArray(lotes)) {
@@ -779,23 +781,31 @@ Contrato.prototype.updateContrato = async function () {
 Contrato.deleteContrato = function (nro, year, tipo) {
   return new Promise(async (resolve, reject) => {
     try {
-      pool.task(async t => {
-        let result = await t.query(
-          `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-        )
-        if (!result.length) {
-          result = await t.query(
-            `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+      pool
+        .tx('delte-contrato', async t => {
+          let result = await t.query(
+            `delete from contrato_detalle where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
           )
-        }
-        if (result.length) {
-          result = await t.query(
-            `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
-          )
-        }
-        resolve()
-      })
+          if (!result.length) {
+            result = await t.query(
+              `delete from contrato_lote where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+            )
+          }
+          if (result.length) {
+            result = await t.query(
+              `delete from contrato where contrato_nro = ${nro} and contrato_year = ${year} and tipo_contrato_id = ${tipo} RETURNING contrato_nro`
+            )
+          }
+        })
+        .then(data => {
+          resolve()
+        })
+        .catch(error => {
+          console.log('entro en tx')
+          reject(error)
+        })
     } catch (error) {
+      console.log('entro en catch')
       reject(error)
     }
   })
