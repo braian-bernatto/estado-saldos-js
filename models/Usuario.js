@@ -11,7 +11,7 @@ Usuario.verificarUsuario = async function (email, password) {
     try {
       // revisar si existe usuario
       let usuario = await pool.query(
-        `select * from usuario where usuario_email ilike '${email}'`
+        `select * from usuario natural join rol where usuario_email ilike '${email}'`
       )
 
       // console.log(usuario)
@@ -26,7 +26,8 @@ Usuario.verificarUsuario = async function (email, password) {
           const token = jwt.sign(
             {
               nombre: usuario[0].usuario_nombre,
-              email: usuario[0].usuario_email
+              email: usuario[0].usuario_email,
+              rol: usuario[0].rol_nombre
             },
             process.env.SECRETA,
             {
