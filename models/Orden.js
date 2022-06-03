@@ -120,7 +120,7 @@ Orden.prototype.addOrden = async function () {
       try {
         pool.task(async t => {
           let resultado = await t.query(
-            `INSERT INTO orden(
+            `SET datestyle = ymd; INSERT INTO orden(
               orden_nro, orden_year, orden_tipo_id, orden_monto, orden_emision, orden_recepcion, orden_observacion, orden_estado, rubro_id, contrato_nro, contrato_year, tipo_contrato_id)
             VALUES ('${nro}', ${year}, ${tipo}, ${monto},'${fecha_emision}', ${
               fecha_recepcion ? "'" + fecha_recepcion + "'" : null
@@ -203,7 +203,7 @@ Orden.prototype.updateOrden = async function () {
       try {
         pool.task(async t => {
           let resultado = await t.query(
-            `UPDATE orden
+            `SET datestyle = ymd; UPDATE orden
             SET orden_monto=${monto}, orden_emision='${fecha_emision}', orden_recepcion=${
               fecha_recepcion ? "'" + fecha_recepcion + "'" : null
             }, orden_observacion=${
