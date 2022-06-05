@@ -727,12 +727,12 @@ apiRouter.delete('/str/:nro/:year', auth, strController.apiDeleteStr)
 
 // notas credito routes
 apiRouter.get(
-  '/licitaciones/:id/contratos/:nro/notaCredito',
+  '/licitaciones/:id/contratos/:nro/nota-credito',
   auth,
   notaCreditoController.apiGetNotasCredito
 )
 apiRouter.get(
-  '/notaCredito/:nro/:timbrado',
+  '/nota-credito/:nro/:timbrado',
   auth,
   notaCreditoController.apiCheckNotaCreditoNro
 )
@@ -778,7 +778,7 @@ apiRouter.post(
   notaCreditoController.apiAddNotaCredito
 )
 apiRouter.put(
-  '/factura/:nro/:timbrado/notaCredito/:nroNotaCredito/:timbradoNotaCredito',
+  '/factura/:nro/:timbrado/nota-credito/:nroNotaCredito/:timbradoNotaCredito',
   auth,
   [
     check('nro')
@@ -819,13 +819,89 @@ apiRouter.put(
   notaCreditoController.apiUpdateNotaCredito
 )
 apiRouter.delete(
-  '/notaCredito/:nro/:timbrado',
+  '/nota-credito/:nro/:timbrado',
   auth,
   notaCreditoController.apiDeleteNotaCredito
 )
 
 // empresa routes
 apiRouter.get('/empresa', auth, empresaController.apiGetEmpresas)
+apiRouter.get('/empresa/:ruc', auth, empresaController.apiCheckRuc)
+apiRouter.post(
+  '/empresa',
+  auth,
+  [
+    check('ruc')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El ruc debe ser un string')
+      .toUpperCase(),
+    check('nombre_fantasia')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nombre debe ser un string'),
+    check('representante')
+      .isString()
+      .withMessage('El representante debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('telefono')
+      .isString()
+      .withMessage('El teléfono debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('direccion')
+      .isString()
+      .withMessage('La dirección debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('email')
+      .isEmail()
+      .withMessage('Email no válido')
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  empresaController.apiAddEmpresa
+)
+apiRouter.put(
+  '/empresa/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('ruc')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El ruc debe ser un string')
+      .toUpperCase(),
+    check('nombre_fantasia')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nombre debe ser un string'),
+    check('representante')
+      .isString()
+      .withMessage('El representante debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('telefono')
+      .isString()
+      .withMessage('El teléfono debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('direccion')
+      .isString()
+      .withMessage('La dirección debe ser un string')
+      .optional({ nullable: true, checkFalsy: true }),
+    check('email')
+      .isEmail()
+      .withMessage('Email no válido')
+      .optional({ nullable: true, checkFalsy: true })
+  ],
+  empresaController.apiUpdateEmpresa
+)
+apiRouter.delete('/empresa/:id', auth, empresaController.apiDeleteEmpresa)
 
 // nivel routes
 apiRouter.get('/nivel', auth, nivelController.apiGetNiveles)
@@ -839,6 +915,60 @@ apiRouter.get(
   auth,
   tipoLicitacionController.apiGetTipoLicitaciones
 )
+apiRouter.get(
+  '/tipo-licitacion/:tipo',
+  auth,
+  tipoLicitacionController.apiCheckTipoLicitacion
+)
+apiRouter.post(
+  '/tipo-licitacion',
+  auth,
+  [
+    check('siglas')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('Las siglas deben ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo licitacion debe ser un string')
+      .toUpperCase()
+  ],
+  tipoLicitacionController.apiAddTipoLicitacion
+)
+apiRouter.put(
+  '/tipo-licitacion/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('siglas')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('Las siglas deben ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo licitacion debe ser un string')
+      .toUpperCase()
+  ],
+  tipoLicitacionController.apiUpdateTipoLicitacion
+)
+apiRouter.delete(
+  '/tipo-licitacion/:id',
+  auth,
+  tipoLicitacionController.apiDeleteTipoLicitacion
+)
 
 // tipo-contrato routes
 apiRouter.get(
@@ -846,9 +976,89 @@ apiRouter.get(
   auth,
   tipoContratoController.apiGetTipoContratos
 )
+apiRouter.get(
+  '/tipo-contrato/:tipo',
+  auth,
+  tipoContratoController.apiCheckTipoContrato
+)
+apiRouter.post(
+  '/tipo-contrato',
+  auth,
+  [
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo contrato debe ser un string')
+      .toUpperCase()
+  ],
+  tipoContratoController.apiAddTipoContrato
+)
+apiRouter.put(
+  '/tipo-contrato/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo contrato debe ser un string')
+      .toUpperCase()
+  ],
+  tipoContratoController.apiUpdateTipoContrato
+)
+apiRouter.delete(
+  '/tipo-contrato/:id',
+  auth,
+  tipoContratoController.apiDeleteTipoContrato
+)
 
 // tipo-ordenes routes
 apiRouter.get('/tipo-orden', auth, tipoOrdenController.apiGetTipoOrdenes)
+apiRouter.get('/tipo-orden/:tipo', auth, tipoOrdenController.apiCheckTipoOrden)
+apiRouter.post(
+  '/tipo-orden',
+  auth,
+  [
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo contrato debe ser un string')
+      .toUpperCase()
+  ],
+  tipoOrdenController.apiAddTipoOrden
+)
+apiRouter.put(
+  '/tipo-orden/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El tipo contrato debe ser un string')
+      .toUpperCase()
+  ],
+  tipoOrdenController.apiUpdateTipoOrden
+)
+apiRouter.delete(
+  '/tipo-orden/:id',
+  auth,
+  tipoOrdenController.apiDeleteTipoOrden
+)
 
 // moneda routes
 apiRouter.get('/moneda', auth, monedaController.apiGetMonedas)
