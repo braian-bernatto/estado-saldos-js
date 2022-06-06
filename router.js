@@ -16,6 +16,7 @@ const monedaController = require('./controllers/monedaController')
 const dependenciaController = require('./controllers/dependenciaController')
 const codigoController = require('./controllers/codigoController')
 const adendaController = require('./controllers/adendaController')
+const rolController = require('./controllers/rolController')
 const cors = require('cors')
 const { check } = require('express-validator')
 const auth = require('./middleware/auth')
@@ -738,7 +739,7 @@ apiRouter.get(
   notaCreditoController.apiCheckNotaCreditoNro
 )
 apiRouter.post(
-  '/factura/:nro/:timbrado/notaCredito',
+  '/factura/:nro/:timbrado/nota-credito',
   auth,
   [
     check('nro')
@@ -1502,5 +1503,42 @@ apiRouter.delete(
   auth,
   adendaController.apiDeleteAdenda
 )
+
+// rol routes
+apiRouter.get('/rol', auth, rolController.apiGetRoles)
+apiRouter.get('/rol/:nro', auth, rolController.apiCheckRol)
+apiRouter.post(
+  '/rol',
+  auth,
+  [
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El rol debe ser un string')
+      .toLowerCase()
+  ],
+  rolController.apiAddRol
+)
+apiRouter.put(
+  '/rol/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El rol debe ser un string')
+      .toLowerCase()
+  ],
+  rolController.apiUpdateRol
+)
+apiRouter.delete('/rol/:id', auth, rolController.apiDeleteRol)
 
 module.exports = apiRouter
