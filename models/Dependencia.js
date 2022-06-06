@@ -1,15 +1,15 @@
 const pool = require('../db')
 
-const Moneda = function (data) {
+const Dependencia = function (data) {
   this.data = data
   this.errors = []
 }
 
-Moneda.allMonedas = async function () {
+Dependencia.allDependencias = async function () {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from moneda order by moneda_descri`
+        `select * from dependencia order by dependencia_id`
       )
       resultado.length ? resolve(resultado) : reject()
     } catch (error) {
@@ -18,11 +18,11 @@ Moneda.allMonedas = async function () {
   })
 }
 
-Moneda.checkMoneda = async function ({ nombre }) {
+Dependencia.checkDependencia = async function ({ id }) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado = await pool.query(
-        `select * from moneda where moneda_descri ilike '${nombre}'`
+        `select * from dependencia where dependencia_id ilike '${id}'`
       )
       resultado.length ? resolve(false) : resolve(true)
     } catch (error) {
@@ -30,16 +30,16 @@ Moneda.checkMoneda = async function ({ nombre }) {
     }
   })
 }
-Moneda.prototype.addMoneda = async function () {
-  const { simbolo, descripcion } = this.data
+Dependencia.prototype.addDependencia = async function () {
+  const { id, descripcion } = this.data
 
   // only if there are no errors proceedo to save into the database
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
       try {
         let resultado = await pool.query(
-          `INSERT INTO moneda (moneda_simbolo, moneda_descri)
-            VALUES ('${simbolo}', '${descripcion}')`
+          `INSERT INTO dependencia (dependencia_id, dependencia_descri)
+            VALUES ('${id}','${descripcion}')`
         )
         resolve(resultado)
       } catch (error) {
@@ -53,14 +53,14 @@ Moneda.prototype.addMoneda = async function () {
   })
 }
 
-Moneda.prototype.updateMoneda = async function () {
-  const { id, simbolo, descripcion } = this.data
+Dependencia.prototype.updateDependencia = async function () {
+  const { id, descripcion } = this.data
   return new Promise(async (resolve, reject) => {
     if (!this.errors.length) {
       try {
         let resultado = await pool.query(
-          `UPDATE moneda 
-          SET moneda_simbolo= '${simbolo}', moneda_descri='${descripcion}' WHERE moneda_id = ${id}`
+          `UPDATE dependencia 
+          SET dependencia_descri= '${descripcion}' WHERE dependencia_id = '${id}'`
         )
         resolve(resultado)
       } catch (error) {
@@ -74,10 +74,10 @@ Moneda.prototype.updateMoneda = async function () {
   })
 }
 
-Moneda.deleteMoneda = function ({ id }) {
+Dependencia.deleteDependencia = function ({ id }) {
   return new Promise(async (resolve, reject) => {
     try {
-      await pool.query(`delete from moneda where moneda_id = ${id}`)
+      await pool.query(`delete from dependencia where dependencia_id = '${id}'`)
       resolve()
     } catch (error) {
       reject(error)
@@ -85,4 +85,4 @@ Moneda.deleteMoneda = function ({ id }) {
   })
 }
 
-module.exports = Moneda
+module.exports = Dependencia

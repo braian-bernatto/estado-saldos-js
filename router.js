@@ -13,6 +13,7 @@ const tipoLicitacionController = require('./controllers/tipoLicitacionController
 const tipoContratoController = require('./controllers/tipoContratoController')
 const tipoOrdenController = require('./controllers/tipoOrdenController')
 const monedaController = require('./controllers/monedaController')
+const dependenciaController = require('./controllers/dependenciaController')
 const codigoController = require('./controllers/codigoController')
 const adendaController = require('./controllers/adendaController')
 const cors = require('cors')
@@ -905,9 +906,95 @@ apiRouter.delete('/empresa/:id', auth, empresaController.apiDeleteEmpresa)
 
 // nivel routes
 apiRouter.get('/nivel', auth, nivelController.apiGetNiveles)
+apiRouter.get('/nivel/:nro', auth, nivelController.apiCheckNivel)
+apiRouter.post(
+  '/nivel',
+  auth,
+  [
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nivel debe ser un string')
+      .toUpperCase()
+  ],
+  nivelController.apiAddNivel
+)
+apiRouter.put(
+  '/nivel/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nivel debe ser un string')
+      .toUpperCase()
+  ],
+  nivelController.apiUpdateNivel
+)
+apiRouter.delete('/nivel/:id', auth, nivelController.apiDeleteNivel)
 
 // rubro routes
 apiRouter.get('/rubro', auth, rubroController.apiGetRubros)
+apiRouter.get('/rubro/:nro', auth, rubroController.apiCheckRubro)
+apiRouter.post(
+  '/rubro',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('nivel_id', 'El nivel es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El nivel debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El nivel debe ser un string')
+      .toUpperCase()
+  ],
+  rubroController.apiAddRubro
+)
+apiRouter.put(
+  '/rubro/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('nivel_id', 'El nivel es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El nivel debe ser numérico')
+      .toInt(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El Nivel debe ser un string')
+      .toUpperCase()
+  ],
+  rubroController.apiUpdateRubro
+)
+apiRouter.delete('/rubro/:id', auth, rubroController.apiDeleteRubro)
 
 // tipo-licitacion routes
 apiRouter.get(
@@ -1026,7 +1113,7 @@ apiRouter.post(
   '/tipo-orden',
   auth,
   [
-    check('descripcion')
+    check('descripcion', 'La descripción es obligatoria')
       .not()
       .isEmpty()
       .isString()
@@ -1062,6 +1149,103 @@ apiRouter.delete(
 
 // moneda routes
 apiRouter.get('/moneda', auth, monedaController.apiGetMonedas)
+apiRouter.get('/moneda/:nombre', auth, monedaController.apiCheckMoneda)
+apiRouter.post(
+  '/moneda',
+  auth,
+  [
+    check('simbolo', 'El simbolo es obligatorio')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El símbolo deben ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('La moneda debe ser un string')
+      .toUpperCase()
+  ],
+  monedaController.apiAddMoneda
+)
+apiRouter.put(
+  '/moneda/:id',
+  auth,
+  [
+    check('id', 'El id es obligatorio')
+      .not()
+      .isEmpty()
+      .isNumeric()
+      .withMessage('El id debe ser numérico')
+      .toInt(),
+    check('simbolo', 'El simbolo es obligatorio')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El símbolo deben ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('La moneda debe ser un string')
+      .toUpperCase()
+  ],
+  monedaController.apiUpdateMoneda
+)
+apiRouter.delete('/moneda/:id', auth, monedaController.apiDeleteMoneda)
+
+// dependencia routes
+apiRouter.get('/dependencia', auth, dependenciaController.apiGetDependencias)
+apiRouter.get(
+  '/dependencia/:id',
+  auth,
+  dependenciaController.apiCheckDependencia
+)
+apiRouter.post(
+  '/dependencia',
+  auth,
+  [
+    check('id', 'El ID es obligatorio')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El ID debe ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El Dependencia debe ser un string')
+      .toUpperCase()
+  ],
+  dependenciaController.apiAddDependencia
+)
+apiRouter.put(
+  '/dependencia/:id',
+  auth,
+  [
+    check('id', 'El ID es obligatorio')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El ID debe ser un string')
+      .toUpperCase(),
+    check('descripcion')
+      .not()
+      .isEmpty()
+      .isString()
+      .withMessage('El Dependencia debe ser un string')
+      .toUpperCase()
+  ],
+  dependenciaController.apiUpdateDependencia
+)
+apiRouter.delete(
+  '/dependencia/:id',
+  auth,
+  dependenciaController.apiDeleteDependencia
+)
 
 // codigo contratacion routes
 apiRouter.get('/codigo-contratacion', auth, codigoController.apiGetCodigos)

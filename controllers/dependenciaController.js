@@ -1,55 +1,55 @@
-const Nivel = require('../models/Nivel')
+const Dependencia = require('../models/Dependencia')
 const { validationResult } = require('express-validator')
 
-exports.apiGetNiveles = async function (req, res) {
+exports.apiGetDependencias = async function (req, res) {
   try {
-    let niveles = await Nivel.allNiveles()
-    res.json(niveles)
+    let Dependencias = await Dependencia.allDependencias()
+    res.json(Dependencias)
   } catch (error) {
     res.status(500).send('Error')
   }
 }
 
-exports.apiCheckNivel = async function (req, res) {
+exports.apiCheckDependencia = async function (req, res) {
   try {
-    let respuesta = await Nivel.checkNivel(req.params)
+    let respuesta = await Dependencia.checkDependencia(req.params)
     res.json(respuesta)
   } catch (error) {
     res.status(500).send(error)
   }
 }
 
-exports.apiAddNivel = async function (req, res) {
+exports.apiAddDependencia = async function (req, res) {
   // revisar si hay errores
   const errores = validationResult(req)
   if (!errores.isEmpty()) {
     return res.status(400).json({ errores: errores.array() })
   }
   try {
-    let respuesta = await new Nivel(req.body).addNivel()
+    let respuesta = await new Dependencia(req.body).addDependencia()
     res.json(respuesta)
   } catch (error) {
     res.status(500).send('Error')
   }
 }
 
-exports.apiUpdateNivel = async function (req, res) {
+exports.apiUpdateDependencia = async function (req, res) {
   // revisar si hay errores
   const errores = validationResult(req)
   if (!errores.isEmpty()) {
     return res.status(400).json({ errores: errores.array() })
   }
   try {
-    let respuesta = await new Nivel(req.body).updateNivel()
+    let respuesta = await new Dependencia(req.body).updateDependencia()
     res.json(respuesta)
   } catch (error) {
     res.status(500).send('Error')
   }
 }
 
-exports.apiDeleteNivel = async function (req, res) {
+exports.apiDeleteDependencia = async function (req, res) {
   try {
-    let respuesta = await Nivel.deleteNivel(req.params)
+    let respuesta = await Dependencia.deleteDependencia(req.params)
     res.json(respuesta)
   } catch (error) {
     res.status(500).send('Error')
