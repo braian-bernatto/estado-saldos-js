@@ -158,20 +158,25 @@ Licitacion.licitacionesSearch = async function (input) {
   return new Promise(async (resolve, reject) => {
     try {
       let resultado =
-        await pool.query(`select * from licitacion natural join licitacion_tipo where licitacion_id in (select distinct licitacion_id from licitacion natural join licitacion_tipo
-        natural join contrato natural join codigo_contratacion natural join empresa
+        await pool.query(`select * from licitacion natural join licitacion_tipo where licitacion_id in (SELECT DISTINCT LICITACION_ID
+          FROM LICITACION L
+          NATURAL JOIN LICITACION_TIPO LT
+          NATURAL JOIN CONTRATO C
+          LEFT JOIN CODIGO_CONTRATACION CC ON C.CONTRATO_NRO = CC.CONTRATO_NRO
+          AND C.TIPO_CONTRATO_ID = CC.TIPO_CONTRATO_ID
+          AND C.CONTRATO_YEAR = CC.CONTRATO_YEAR
+          NATURAL JOIN EMPRESA E
         where 
-        licitacion_descri || ' ' || 		   
-        licitacion_id::text || ' ' ||
-        licitacion_tipo_abreviatura || ' ' ||
-			  licitacion_nro::text || '/' ||
-			  licitacion_year::text || ' ' ||
-        codigo_contratacion_id || ' ' ||
-        contrato_nro::text || '/' ||
-        contrato_year::text || ' ' ||
-        licitacion_id::text || ' ' ||
-        empresa_ruc || ' ' || 
-        empresa_nombre_fantasia
+        L.licitacion_descri || ' ' || 		   
+        L.licitacion_id::text || ' ' ||
+        LT.licitacion_tipo_abreviatura || ' ' ||
+			  L.licitacion_nro::text || '/' ||
+			  L.licitacion_year::text || ' ' ||
+        CC.codigo_contratacion_id || ' ' ||
+        C.contrato_nro::text || '/' ||
+        C.contrato_year::text || ' ' ||
+        E.empresa_ruc || ' ' || 
+        E.empresa_nombre_fantasia
         ilike '%${input}%'
         order by licitacion_id desc)`)
 
